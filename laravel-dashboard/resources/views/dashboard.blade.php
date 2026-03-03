@@ -13,11 +13,11 @@
             <span>Submitted</span>
             <span class="count-badge px-2 py-0.5 rounded-full bg-blue-900/30 text-[10px] text-blue-400">0</span>
         </button>
-        <button onclick="switchTab('pending')" id="tab-pending" class="tab-btn px-6 py-2 rounded-xl text-xs font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap">
+        <!-- <button onclick="switchTab('pending')" id="tab-pending" class="tab-btn px-6 py-2 rounded-xl text-xs font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap">
             <span class="w-2 h-2 rounded-full bg-amber-500"></span>
             <span>Pending</span>
             <span class="count-badge px-2 py-0.5 rounded-full bg-amber-900/30 text-[10px] text-amber-400">0</span>
-        </button>
+        </button> -->
         <button onclick="switchTab('approved')" id="tab-approved" class="tab-btn px-6 py-2 rounded-xl text-xs font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap">
             <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span>Approved</span>
@@ -154,8 +154,11 @@
     function fetchData() {
         const statusText = document.getElementById("statusText");
         statusText.textContent = "Memuat data dari server...";
-        fetch("{{ url('/api/data') }}")
-            .then(res => res.json())
+        fetch("/api/data")
+            .then(res => {
+                if (!res.ok) throw new Error("HTTP " + res.status);
+                return res.json();
+            })
             .then(data => {
                 columns = data.columns || [];
                 originalData = data.rows || [];
@@ -178,7 +181,7 @@
             all: originalData.length,
             submitted: originalData.filter(r => r.STATUS === 'SUBMITTED').length,
             approved: originalData.filter(r => r.STATUS === 'APPROVED').length,
-            pending: originalData.filter(r => r.STATUS === 'PENDING').length,
+            // pending: originalData.filter(r => r.STATUS === 'PENDING').length,
             rejected: originalData.filter(r => r.STATUS === 'REJECTED').length
         };
 
@@ -212,6 +215,7 @@
         const thead = document.querySelector("#dataTable thead");
         thead.innerHTML = "";
         const headerRow = document.createElement("tr");
+
         columns.forEach(col => {
             const th = document.createElement("th");
             th.className = "px-4 py-3 font-semibold text-gray-400 cursor-pointer hover:bg-gray-800/50 transition-colors whitespace-nowrap";
@@ -237,9 +241,44 @@
                 tr.className = "hover:bg-blue-500/5 transition-colors group";
                 columns.forEach(col => {
                     const td = document.createElement("td");
-                    td.className = "px-4 py-2.5 border-b border-gray-800/30 group-last:border-0 whitespace-nowrap";
-                    const val = row[col];
-                    td.textContent = (val === null || val === undefined) ? "" : val;
+                    td.className = "px-4 py-2.5 border-b border-gray-800/30 group-last:border-0 whitespace-nowrap text-gray-300";
+                    let val = row[col];
+                    
+                    // Special formatting for Proposal (show filename only)
+                    if (col === 'PROPOSAL' && val && typeof val === 'string') {
+                        val = val.split(/[/\\]/).pop();
+                        // Remove timestamp prefix if present (e.g., proposal_123456_filename.pdf)
+                        if (val.startsWith('proposal_')) {
+                            const parts = val.split('_');
+                            if (parts.length >= 3) {
+                                val = parts.slice(2).join('_');
+                            }
+                        }
+                    }
+
+                    // Format ingest_timestamp (Tanggal Pengajuan)
+                    if (col === 'ingest_timestamp' && val) {
+                         const d = new Date(val);
+                         if (!isNaN(d.getTime())) {
+                             val = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
+                         }
+                    }
+                    
+                    // Status Badge
+                    if (col === 'STATUS') {
+                        const status = (val || 'SUBMITTED').toUpperCase();
+                        let statusClass = 'text-blue-400 bg-blue-400/10 border-blue-400/20'; // Default Submitted
+                        if (status === 'APPROVED') statusClass = 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
+                        if (status === 'REJECTED') statusClass = 'text-red-400 bg-red-400/10 border-red-400/20';
+                        
+                        td.innerHTML = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase border ${statusClass}">${status}</span>`;
+                    } else if (col === 'PROPOSAL') {
+                        td.textContent = val;
+                        td.title = row[col]; // Tooltip shows full path
+                    } else {
+                        td.textContent = (val === null || val === undefined) ? "" : val;
+                    }
+                    
                     tr.appendChild(td);
                 });
                 tbody.appendChild(tr);

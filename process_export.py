@@ -105,11 +105,11 @@ def ensure_schema(conn: sqlite3.Connection, columns: List[str]):
     conn.execute(
         f"""
         CREATE TABLE IF NOT EXISTS records_current (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             {col_defs},
             row_hash TEXT NOT NULL,
             ingest_timestamp TEXT NOT NULL,
-            source_file TEXT NOT NULL,
-            PRIMARY KEY ("NOP")
+            source_file TEXT NOT NULL
         )
         """
     )

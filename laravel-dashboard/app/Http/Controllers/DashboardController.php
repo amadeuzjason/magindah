@@ -70,6 +70,66 @@ class DashboardController extends Controller
         return response()->json(['message' => "Proposal $nop telah ditolak oleh $username."]);
     }
 
+    public function updateStatus(Request $request)
+    {
+        $id = $request->input('id');
+        $status = $request->input('status');
+        $username = Session::get('username', 'Admin'); // Default to Admin if not set for now
+
+        if (!in_array($status, ['Approved', 'Rejected'])) {
+            return response()->json(['success' => false, 'message' => 'Status tidak valid.'], 400);
+        }
+
+        // Check authorization
+        // Only admin can approve/reject
+        if ($username !== 'admin') {
+             return response()->json(['success' => false, 'message' => 'Anda tidak memiliki akses untuk melakukan tindakan ini.'], 403);
+        }
+
+        try {
+            // Check current status
+            $current = $this->sqlite->query('SELECT "STATUS" FROM records_current WHERE "id" = :id', [':id' => $id]);
+            if (empty($current)) {
+                return response()->json(['success' => false, 'message' => 'Proposal tidak ditemukan.'], 404);
+            }
+            
+            $currentStatus = strtoupper($current[0]['STATUS'] ?? 'SUBMITTED');
+            
+            // Check authorization for approving/rejecting
+            // Only admin can approve/reject? Or any logged in user?
+            // Requirement 1 mentioned "Analisis hak akses user... pastikan permission level sesuai role (admin/manager/staff)"
+            // Since we only have simple auth with username, let's assume 'admin' is required for approval actions or specific roles.
+            // For now, let's enforce that only 'admin' user can approve/reject to fix the "Validasi submitted" requirement indirectly if needed,
+            // OR strictly follow requirement 3: "Validasi submitted tanpa respon... implementasikan pengecekan bahwa belum ada data approval"
+            
+            // Requirement 3: "Untuk status submitted, implementasikan pengecekan bahwa belum ada data approval (accept/reject) di database."
+            // This implies we should check if it's already approved/rejected.
+            // Wait, I just removed that check in previous step? No, I removed the block that prevents modification. 
+            // The requirement says: "Validasi submitted tanpa respon: Untuk status submitted, implementasikan pengecekan bahwa belum ada data approval (accept/reject) di database."
+            // This sounds like ensuring we don't approve/reject something that is already approved/rejected?
+            // "Validasi submitted tanpa respon" - maybe it means "Validate that for a submitted status, there is NO response yet".
+            // If it HAS a response (Approved/Rejected), we should NOT allow another response?
+            
+            if (in_array($currentStatus, ['APPROVED', 'REJECTED'])) {
+                 return response()->json(['success' => false, 'message' => "Proposal sudah diproses (Status: $currentStatus)."], 400);
+            }
+
+            // Update using ID
+            $sql = 'UPDATE records_current SET "STATUS" = :status, "APPROVED BY" = :approved_by WHERE "id" = :id';
+            $params = [
+                ':status' => $status,
+                ':approved_by' => $username,
+                ':id' => $id
+            ];
+            
+            $this->sqlite->execute($sql, $params);
+
+            return response()->json(['success' => true, 'message' => "Proposal telah diupdate menjadi $status."]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     public function apiData()
     {
         $df = $this->loadData();
@@ -79,48 +139,37 @@ class DashboardController extends Controller
     private function loadData()
     {
         try {
-            $allCols = $this->sqlite->getColumns('records_current');
-            
-            // 1. Define base columns to keep (standard 17 columns minus internal/actual)
-            $desiredOrder = [
-                "NOP", "PROGRAM", "KATEGORI", "JUSTIFIKASI", "PROPOSAL", "BUDGET", 
-                "REVENUE", "COST", "PROFIT", "INCREMENTAL 1", "INCREMENTAL 2", 
-                "INCREMENTAL 3", "STATUS", "PILOT", "DRIVEN PROGRAM", "ASSIGN BY", 
-                "APPROVED BY"
-            ];
+        $allCols = $this->sqlite->getColumns('records_current');
+        
+        // 1. Fetch all data
+        $rows = $this->sqlite->query("SELECT * FROM records_current");
+        
+        // 2. Define standard columns we want to expose
+        $desiredOrder = [
+            "id", "NOP", "PROGRAM", "KATEGORI", "JUSTIFIKASI", "PROPOSAL", "BUDGET", 
+            "REVENUE", "COST", "PROFIT", "INCREMENTAL 1", "INCREMENTAL 2", 
+            "INCREMENTAL 3", "STATUS", "PILOT", "DRIVEN PROGRAM", "ASSIGN BY", 
+            "APPROVED BY", "ingest_timestamp"
+        ];
+        
+        // 3. Process rows
+        $processedRows = [];
+        foreach ($rows as $row) {
+            $newRow = [];
+            foreach ($desiredOrder as $col) {
+                $newRow[$col] = $row[$col] ?? null;
+            }
+            // Handle specific logic if needed
+            if (isset($row['REVENUE INCREMENTAL 1']) && empty($newRow['INCREMENTAL 1'])) {
+                $newRow['INCREMENTAL 1'] = $row['REVENUE INCREMENTAL 1'];
+            }
+            $processedRows[] = $newRow;
+        }
 
-            // 2. Fetch data
-            $rows = $this->sqlite->query("SELECT * FROM records_current");
-            
-            // 3. Process each row for column normalization
-            $processedRows = array_map(function($row) {
-                // Rename REVENUE INCREMENTAL 1 to INCREMENTAL 1 if it exists and INCREMENTAL 1 is empty
-                if (isset($row['REVENUE INCREMENTAL 1'])) {
-                    if (!isset($row['INCREMENTAL 1']) || empty($row['INCREMENTAL 1'])) {
-                        $row['INCREMENTAL 1'] = $row['REVENUE INCREMENTAL 1'];
-                    }
-                }
-                
-                // Remove unwanted columns
-                unset($row['REVENUE (ACTUAL)']);
-                unset($row['REVENUE INCREMENTAL 1']);
-                unset($row['row_hash']);
-                unset($row['ingest_timestamp']);
-                unset($row['source_file']);
-                unset($row['ExportSource']);
-                unset($row['ExportTimestamp']);
-                unset($row['ExportUser']);
-                
-                return $row;
-            }, $rows);
-
-            // 4. Determine final visible columns based on desired order
-            $finalCols = array_values(array_intersect($desiredOrder, array_keys($processedRows[0] ?? [])));
-
-            return [
-                'columns' => $finalCols,
-                'rows' => $processedRows
-            ];
+        return [
+            'columns' => $desiredOrder,
+            'rows' => $processedRows
+        ];
         } catch (\Exception $e) {
             return [
                 'columns' => [],

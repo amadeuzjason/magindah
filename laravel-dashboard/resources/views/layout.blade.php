@@ -29,6 +29,7 @@
                     <div class="hidden md:flex items-center gap-6">
                         <a href="{{ route('dashboard') }}" class="text-sm {{ Request::is('/') ? 'text-blue-400 font-semibold' : 'text-gray-400 hover:text-white' }} transition-colors">Dashboard</a>
                         <a href="{{ route('approvals') }}" class="text-sm {{ Request::is('approvals') ? 'text-blue-400 font-semibold' : 'text-gray-400 hover:text-white' }} transition-colors">Approvals</a>
+                        <a href="{{ route('input.show') }}" class="text-sm {{ Request::is('input') ? 'text-blue-400 font-semibold' : 'text-gray-400 hover:text-white' }} transition-colors">Input Data</a>
                         <div class="h-4 w-px bg-gray-700"></div>
                         <span class="text-xs text-gray-400">{{ Session::get('username') }}</span>
                         <form action="{{ route('logout') }}" method="POST" class="inline">
