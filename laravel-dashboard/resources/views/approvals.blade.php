@@ -99,43 +99,17 @@
 @push('scripts')
 <script>
     let allProposals = [];
-    let currentFilter = 'all';
+    let currentFilter = new URLSearchParams(window.location.search).get('status') || 'all';
 
-    function loadProposals() {
-        fetch("/api/data")
-            .then(res => {
-                if (!res.ok) throw new Error("HTTP " + res.status);
-                return res.json();
-            })
-            .then(data => {
-                // Map columns to objects
-                const cols = data.columns;
-                allProposals = data.rows.map(row => {
-                    return row;
-                });
-                
-                updateStats();
-                renderProposals();
-            })
-            .catch(err => {
-                console.error("Error loading proposals:", err);
-                document.getElementById('approvalList').innerHTML = `<div class="col-span-full text-center py-12 text-red-400 text-sm">Gagal memuat data approval: ${err.message}</div>`;
-            });
-    }
-
-    function updateStats() {
-        // Status in DB: SUBMITTED, APPROVED, REJECTED
-        const pending = allProposals.filter(p => (p.STATUS || 'SUBMITTED').toUpperCase() === 'SUBMITTED').length;
-        const approved = allProposals.filter(p => (p.STATUS || '').toUpperCase() === 'APPROVED').length; // Should filter by date=today in real app
-        const rejected = allProposals.filter(p => (p.STATUS || '').toUpperCase() === 'REJECTED').length;
-
-        document.getElementById('stat-pending').textContent = pending;
-        document.getElementById('stat-approved').textContent = approved;
-        document.getElementById('stat-rejected').textContent = rejected;
-    }
-
-    function filterStatus(status) {
+    function loadProposals(status = currentFilter) {
         currentFilter = status;
+        
+        // Update URL
+        const url = new URL(window.location);
+        url.searchParams.set('status', status);
+        window.history.pushState({}, '', url);
+
+        // Update active button
         document.querySelectorAll('.filter-btn').forEach(btn => {
             if (btn.textContent.toLowerCase() === status || (status === 'all' && btn.textContent === 'All')) {
                 btn.classList.add('active');
@@ -143,22 +117,47 @@
                 btn.classList.remove('active');
             }
         });
-        renderProposals();
+
+        // Show loading
+        const container = document.getElementById('approvalList');
+        container.innerHTML = '<div class="col-span-full text-center py-12 text-gray-500 text-sm">Loading proposals...</div>';
+
+        fetch(`/api/data?status=${status}`)
+            .then(res => {
+                if (!res.ok) throw new Error("HTTP " + res.status);
+                return res.json();
+            })
+            .then(data => {
+                allProposals = data.rows || [];
+                updateStats(data.counts);
+                renderProposals();
+            })
+            .catch(err => {
+                console.error("Error loading proposals:", err);
+                container.innerHTML = `<div class="col-span-full text-center py-12 text-red-400 text-sm">Gagal memuat data approval: ${err.message}</div>`;
+            });
+    }
+
+    function updateStats(counts) {
+        if (!counts) return;
+        document.getElementById('stat-pending').textContent = counts.submitted || 0;
+        document.getElementById('stat-approved').textContent = counts.approved || 0;
+        document.getElementById('stat-rejected').textContent = counts.rejected || 0;
+    }
+
+    function filterStatus(status) {
+        loadProposals(status);
     }
 
     function renderProposals() {
         const container = document.getElementById('approvalList');
         const searchTerm = document.getElementById('searchApproval').value.toLowerCase();
         
+        // Client-side search filtering on the already status-filtered list
         let filtered = allProposals.filter(p => {
-            const status = (p.STATUS || 'SUBMITTED').toLowerCase();
-            const matchesStatus = currentFilter === 'all' ? true : status === currentFilter;
-            
             const prog = (p.PROGRAM || '').toLowerCase();
             const nop = (p.NOP || '').toLowerCase();
-            const matchesSearch = prog.includes(searchTerm) || nop.includes(searchTerm);
-            
-            return matchesStatus && matchesSearch;
+            return prog.includes(searchTerm) || nop.includes(searchTerm);
         });
 
         if (filtered.length === 0) {
@@ -166,7 +165,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 opacity-20 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span class="text-sm">Tidak ada proposal ditemukan.</span>
+                <span class="text-sm">Tidak ada proposal ditemukan untuk status ini.</span>
             </div>`;
             return;
         }
@@ -312,17 +311,6 @@
     }
 
     function updateStatus(id, status) {
-        // Since we don't have a direct API for updating status in this controller setup easily exposed,
-        // we might need to create one or use the existing reject endpoint logic if adaptable.
-        // But let's assume we use the existing structure.
-        // Actually, route list showed: POST /api/reject [DashboardController::class, 'reject']
-        // We need an approve endpoint too.
-        
-        // For now, let's use a generic status update endpoint if we create it, 
-        // OR reuse reject for rejection.
-        
-        // Let's call a new endpoint we will ensure exists.
-        
         fetch("/api/update-status", {
             method: 'POST',
             headers: {
@@ -334,14 +322,8 @@
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                // Update local data
-                const idx = allProposals.findIndex(p => p.id == id);
-                if (idx !== -1) {
-                    allProposals[idx].STATUS = status.toUpperCase();
-                    allProposals[idx]['APPROVED BY'] = "{{ session('username', 'Admin') }}";
-                    renderProposals();
-                    updateStats();
-                }
+                // Reload data to reflect changes
+                loadProposals(currentFilter);
             } else {
                 alert('Gagal mengupdate status: ' + data.message);
             }
@@ -353,7 +335,7 @@
     }
 
     document.getElementById('searchApproval').addEventListener('input', renderProposals);
-    document.addEventListener("DOMContentLoaded", loadProposals);
+    document.addEventListener("DOMContentLoaded", () => loadProposals());
 </script>
 @endpush
 @endsection

@@ -44,6 +44,14 @@
             <div>
                 <h2 class="text-xl font-bold text-white tracking-wide">Tabel Data Dashboard</h2>
                 <p class="text-xs text-gray-400">Sorting dan filtering interaktif untuk semua program.</p>
+                <div class="mt-3">
+                    <button onclick="exportToExcel()" class="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-all shadow-lg shadow-emerald-900/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Export Excel
+                    </button>
+                </div>
             </div>
             <div class="flex items-center gap-3">
                 <span id="rowCountBadge" class="px-3 py-1 text-[10px] rounded-full bg-blue-900/30 border border-blue-500/30 text-blue-400 font-medium">0 baris</span>
@@ -142,6 +150,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
     let originalData = [];
     let filteredData = [];
@@ -163,7 +172,7 @@
                 columns = data.columns || [];
                 originalData = data.rows || [];
                 
-                updateTabCounts();
+                updateTabCounts(data.counts); // Pass server counts
                 applyFilter(); // Initial filter apply
                 
                 buildTable();
@@ -176,18 +185,22 @@
             });
     }
 
-    function updateTabCounts() {
-        const counts = {
-            all: originalData.length,
-            submitted: originalData.filter(r => r.STATUS === 'SUBMITTED').length,
-            approved: originalData.filter(r => r.STATUS === 'APPROVED').length,
-            // pending: originalData.filter(r => r.STATUS === 'PENDING').length,
-            rejected: originalData.filter(r => r.STATUS === 'REJECTED').length
+    function updateTabCounts(counts) {
+        if (!counts) return;
+        
+        // Use server-provided counts directly
+        // Map UI IDs to API keys
+        const mapping = {
+            'all': 'all',
+            'submitted': 'submitted',
+            'approved': 'approved',
+            'rejected': 'rejected'
         };
 
-        Object.keys(counts).forEach(key => {
-            const badge = document.querySelector(`#tab-${key} .count-badge`);
-            if (badge) badge.textContent = counts[key];
+        Object.keys(mapping).forEach(uiKey => {
+            const apiKey = mapping[uiKey];
+            const badge = document.querySelector(`#tab-${uiKey} .count-badge`);
+            if (badge) badge.textContent = counts[apiKey] || 0;
         });
     }
 
@@ -296,27 +309,12 @@
             currentSortDirection = "asc";
         }
         
-        filteredData.sort((a, b) => {
-            let va = a[column], vb = b[column];
-            if (va === vb) return 0;
-            if (va === null) return 1;
-            if (vb === null) return -1;
-            
-            if (!isNaN(parseFloat(va)) && !isNaN(parseFloat(vb))) {
-                return currentSortDirection === "asc" ? va - vb : vb - va;
-            }
-            
-            va = String(va).toLowerCase();
-            vb = String(vb).toLowerCase();
-            return currentSortDirection === "asc" ? (va < vb ? -1 : 1) : (va < vb ? 1 : -1);
-        });
-        
+        applyFilter(); // Re-apply filter and sort together
+
         document.querySelectorAll("#dataTable th").forEach(t => t.classList.remove("text-blue-400"));
         th.classList.add("text-blue-400");
         document.getElementById("sortStatus").textContent = `Sort: ${column} (${currentSortDirection})`;
         document.getElementById("clearSortBtn").classList.remove("hidden");
-        renderRows();
-        renderChart();
     }
 
     function initControls() {
@@ -359,15 +357,49 @@
         const term = document.getElementById("globalSearch").value.toLowerCase();
         
         // 1. Filter by Tab
-        let tempFiltered = originalData;
-        if (currentTab !== 'all') {
-            tempFiltered = originalData.filter(r => r.STATUS === currentTab.toUpperCase());
+        let tempFiltered = [];
+        const targetTab = currentTab.toUpperCase();
+
+        if (currentTab === 'all') {
+            tempFiltered = originalData;
+        } else if (currentTab === 'submitted') {
+            // "Submitted" tab shows everything that is NOT Approved and NOT Rejected
+            // This aligns with the server-side counting logic which groups unknown statuses as submitted
+            tempFiltered = originalData.filter(r => {
+                const s = String(r.STATUS || '').trim().toUpperCase();
+                return s !== 'APPROVED' && s !== 'REJECTED';
+            });
+        } else {
+             // Strict match for Approved and Rejected
+            tempFiltered = originalData.filter(r => String(r.STATUS || '').trim().toUpperCase() === targetTab);
         }
         
         // 2. Filter by Global Search
-        filteredData = tempFiltered.filter(row => 
-            columns.some(col => String(row[col]).toLowerCase().includes(term))
-        );
+        if (term) {
+            filteredData = tempFiltered.filter(row => 
+                columns.some(col => String(row[col] || '').toLowerCase().includes(term))
+            );
+        } else {
+            filteredData = tempFiltered;
+        }
+
+        // 3. Re-apply Sort if active
+        if (currentSortColumn) {
+            filteredData.sort((a, b) => {
+                let va = a[currentSortColumn], vb = b[currentSortColumn];
+                if (va === vb) return 0;
+                if (va === null) return 1;
+                if (vb === null) return -1;
+                
+                if (!isNaN(parseFloat(va)) && !isNaN(parseFloat(vb))) {
+                    return currentSortDirection === "asc" ? va - vb : vb - va;
+                }
+                
+                va = String(va).toLowerCase();
+                vb = String(vb).toLowerCase();
+                return currentSortDirection === "asc" ? (va < vb ? -1 : 1) : (va < vb ? 1 : -1);
+            });
+        }
         
         renderRows();
         renderChart();
@@ -416,6 +448,33 @@
                 }
             }
         });
+    }
+
+    function exportToExcel() {
+        if (!filteredData || filteredData.length === 0) {
+            alert("Tidak ada data untuk diexport.");
+            return;
+        }
+
+        // Prepare data for export
+        const exportData = filteredData.map(row => {
+            const newRow = {};
+            columns.forEach(col => {
+                newRow[col] = row[col];
+            });
+            return newRow;
+        });
+
+        // Create workbook and worksheet
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(exportData);
+
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(wb, ws, "Data Dashboard");
+
+        // Generate Excel file
+        const fileName = `dashboard_export_${new Date().toISOString().slice(0,10)}.xlsx`;
+        XLSX.writeFile(wb, fileName);
     }
 
     document.addEventListener("DOMContentLoaded", fetchData);

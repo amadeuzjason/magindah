@@ -130,19 +130,51 @@ class DashboardController extends Controller
         }
     }
 
-    public function apiData()
+    public function apiData(Request $request)
     {
-        $df = $this->loadData();
+        $status = $request->input('status');
+        $df = $this->loadData($status);
         return response()->json($df);
     }
 
-    private function loadData()
+    private function loadData($status = null)
     {
         try {
         $allCols = $this->sqlite->getColumns('records_current');
         
-        // 1. Fetch all data
-        $rows = $this->sqlite->query("SELECT * FROM records_current");
+        // 1. Fetch data with optional filter
+        $sql = "SELECT * FROM records_current";
+        $params = [];
+        
+        if ($status && strtolower($status) !== 'all') {
+            $sql .= ' WHERE UPPER("STATUS") = :status';
+            $params[':status'] = strtoupper($status);
+        }
+        
+        $rows = $this->sqlite->query($sql, $params);
+        
+        // Fetch counts for stats
+        // We can do this efficiently with one query: SELECT STATUS, COUNT(*) as count FROM records_current GROUP BY STATUS
+        $statsRows = $this->sqlite->query('SELECT "STATUS", COUNT(*) as count FROM records_current GROUP BY "STATUS"');
+        $counts = [
+            'all' => 0,
+            'submitted' => 0,
+            'approved' => 0,
+            'rejected' => 0
+        ];
+        
+        foreach ($statsRows as $stat) {
+            $s = strtolower($stat['STATUS'] ?? 'submitted');
+            $c = $stat['count'];
+            $counts['all'] += $c;
+            if (isset($counts[$s])) {
+                $counts[$s] += $c;
+            } else {
+                // Map other statuses to submitted or ignore?
+                // Assume default is submitted
+                $counts['submitted'] += $c; 
+            }
+        }
         
         // 2. Define standard columns we want to expose
         $desiredOrder = [
@@ -168,7 +200,8 @@ class DashboardController extends Controller
 
         return [
             'columns' => $desiredOrder,
-            'rows' => $processedRows
+            'rows' => $processedRows,
+            'counts' => $counts
         ];
         } catch (\Exception $e) {
             return [
