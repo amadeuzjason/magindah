@@ -67,5 +67,9 @@ Magindah adalah platform manajemen proposal digital yang dirancang untuk menyede
 ## 📝 Catatan Rilis
 Sistem ini terus dikembangkan untuk mendukung efisiensi operasional dengan fokus pada integritas data dan kemudahan penggunaan bagi seluruh jajaran manajemen dan staff operasional.
 
+## 👤 User Login
+email: admin@example.com
+password: admin123
+
 ---
 © 2026 Magindah — Developed by Janiator Jr. Powered by **Telkomsel**.
