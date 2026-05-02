@@ -17,8 +17,8 @@
         <form action="{{ route('login') }}" method="POST" class="space-y-5">
             @csrf
             <div>
-                <label for="username" class="block text-xs text-gray-400 mb-1.5 ml-1">Username</label>
-                <input type="text" name="username" id="username" required 
+                <label for="email" class="block text-xs text-gray-400 mb-1.5 ml-1">Email</label>
+                <input type="email" name="email" id="email" required 
                     class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700/50 text-gray-200 text-sm focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all">
             </div>
             <div>
@@ -32,14 +32,6 @@
             </button>
         </form>
 
-        <div class="mt-8 pt-6 border-t border-gray-800/50 text-[10px] text-gray-600 space-y-1">
-            <p>Akun yang tersedia:</p>
-            <ul class="list-disc list-inside">
-                <li>NOP-PALU / palu123</li>
-                <li>NOP-MKS / mks123</li>
-                <li>NOP-MANADO / manado123</li>
-            </ul>
-        </div>
     </div>
 </div>
 @endsection

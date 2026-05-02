@@ -1,483 +1,259 @@
 @extends('layout')
 
 @section('content')
-<div class="flex flex-col gap-8">
-    <!-- Chrome-style Tab Filter -->
-    <div class="flex items-center gap-1 p-1 bg-slate-900/50 rounded-2xl border border-gray-800/50 w-fit mx-auto overflow-x-auto max-w-full no-scrollbar">
-        <button onclick="switchTab('all')" id="tab-all" class="tab-btn active px-6 py-2 rounded-xl text-xs font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap">
-            <span>All Proposals</span>
-            <span class="count-badge px-2 py-0.5 rounded-full bg-gray-800 text-[10px] text-gray-400">0</span>
-        </button>
-        <button onclick="switchTab('submitted')" id="tab-submitted" class="tab-btn px-6 py-2 rounded-xl text-xs font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap">
-            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-            <span>Submitted</span>
-            <span class="count-badge px-2 py-0.5 rounded-full bg-blue-900/30 text-[10px] text-blue-400">0</span>
-        </button>
-        <!-- <button onclick="switchTab('pending')" id="tab-pending" class="tab-btn px-6 py-2 rounded-xl text-xs font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap">
-            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-            <span>Pending</span>
-            <span class="count-badge px-2 py-0.5 rounded-full bg-amber-900/30 text-[10px] text-amber-400">0</span>
-        </button> -->
-        <button onclick="switchTab('approved')" id="tab-approved" class="tab-btn px-6 py-2 rounded-xl text-xs font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>Approved</span>
-            <span class="count-badge px-2 py-0.5 rounded-full bg-emerald-900/30 text-[10px] text-emerald-400">0</span>
-        </button>
-        <button onclick="switchTab('rejected')" id="tab-rejected" class="tab-btn px-6 py-2 rounded-xl text-xs font-medium transition-all duration-200 flex items-center gap-2 whitespace-nowrap">
-            <span class="w-2 h-2 rounded-full bg-red-500"></span>
-            <span>Rejected</span>
-            <span class="count-badge px-2 py-0.5 rounded-full bg-red-900/30 text-[10px] text-red-400">0</span>
-        </button>
+<div class="flex flex-col gap-8 max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-white tracking-wide">Dashboard Magindah</h2>
+            <p class="text-sm text-gray-400">Ringkasan statistik proposal dan navigasi cepat.</p>
+        </div>
+        <div class="flex items-center gap-3 bg-slate-900/50 p-1.5 rounded-xl border border-gray-800/50">
+            <a href="{{ route('magindah.show') }}" class="px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-colors flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                Buat Proposal
+            </a>
+            <a href="{{ route('approvals') }}" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white transition-colors flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                    <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
+                </svg>
+                Approvals
+            </a>
+            <a href="{{ route('guide') }}" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white transition-colors flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+                Guide
+            </a>
+        </div>
     </div>
 
-    <!-- Table Section (Top) -->
-    <div class="glass p-6 rounded-3xl shadow-xl border border-gray-700/30 relative overflow-hidden">
-        <!-- Table Loading Overlay -->
-        <div id="tableLoader" class="absolute inset-0 z-20 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
-            <div class="flex flex-col items-center gap-3">
-                <div class="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-                <span class="text-xs text-blue-400 font-medium tracking-wider">FILTERING DATA...</span>
-            </div>
-        </div>
-
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="glass p-6 rounded-2xl border border-gray-700/30 flex items-center justify-between">
             <div>
-                <h2 class="text-xl font-bold text-white tracking-wide">Tabel Data Dashboard</h2>
-                <p class="text-xs text-gray-400">Sorting dan filtering interaktif untuk semua program.</p>
-                <div class="mt-3">
-                    <button onclick="exportToExcel()" class="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-all shadow-lg shadow-emerald-900/20">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Export Excel
-                    </button>
-                </div>
+                <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Total Proposal</p>
+                <h3 class="text-3xl font-bold text-white" id="stat-total">0</h3>
             </div>
-            <div class="flex items-center gap-3">
-                <span id="rowCountBadge" class="px-3 py-1 text-[10px] rounded-full bg-blue-900/30 border border-blue-500/30 text-blue-400 font-medium">0 baris</span>
+            <div class="p-3 rounded-xl bg-blue-500/10 text-blue-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+            </div>
+        </div>
+        
+        <div class="glass p-6 rounded-2xl border border-gray-700/30 flex items-center justify-between">
+            <div>
+                <p class="text-xs text-amber-400/80 uppercase tracking-wider mb-1">Pending Approval</p>
+                <h3 class="text-3xl font-bold text-white" id="stat-pending">0</h3>
+            </div>
+            <div class="p-3 rounded-xl bg-amber-500/10 text-amber-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div class="space-y-1.5">
-                <label class="text-[10px] text-gray-400 ml-1">Pencarian Global</label>
-                <input type="text" id="globalSearch" placeholder="Cari di semua kolom..." 
-                    class="w-full px-4 py-2 rounded-xl bg-slate-900/80 border border-slate-700/50 text-gray-200 text-xs focus:border-blue-500/50 outline-none transition-all">
+        <div class="glass p-6 rounded-2xl border border-gray-700/30 flex items-center justify-between">
+            <div>
+                <p class="text-xs text-emerald-400/80 uppercase tracking-wider mb-1">Approved</p>
+                <h3 class="text-3xl font-bold text-white" id="stat-approved">0</h3>
             </div>
-            <div class="space-y-1.5">
-                <label class="text-[10px] text-gray-400 ml-1">Kolom Prioritas</label>
-                <select id="primaryColumnSelect" class="w-full px-4 py-2 rounded-xl bg-slate-900/80 border border-slate-700/50 text-gray-200 text-xs outline-none cursor-pointer"></select>
-            </div>
-            <div class="space-y-1.5">
-                <label class="text-[10px] text-gray-400 ml-1">Batas Baris</label>
-                <select id="rowLimit" class="w-full px-4 py-2 rounded-xl bg-slate-900/80 border border-slate-700/50 text-gray-200 text-xs outline-none cursor-pointer">
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                    <option value="250">250</option>
-                    <option value="0">Semua</option>
-                </select>
+            <div class="p-3 rounded-xl bg-emerald-500/10 text-emerald-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
             </div>
         </div>
 
-        <div class="rounded-2xl border border-gray-800/50 overflow-hidden bg-slate-900/30">
-            <div class="max-h-[400px] overflow-auto scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
-                <table id="dataTable" class="w-full text-[11px] text-left">
-                    <thead class="sticky top-0 z-10 bg-slate-900 border-b border-gray-800"></thead>
-                    <tbody class="divide-y divide-gray-800/30"></tbody>
-                </table>
+        <div class="glass p-6 rounded-2xl border border-gray-700/30 flex items-center justify-between">
+            <div>
+                <p class="text-xs text-red-400/80 uppercase tracking-wider mb-1">Rejected</p>
+                <h3 class="text-3xl font-bold text-white" id="stat-rejected">0</h3>
             </div>
-        </div>
-
-        <div class="mt-4 flex justify-between items-center text-[10px] text-gray-500">
-            <div id="statusText">Memuat data...</div>
-            <div id="sortStatusContainer" class="flex items-center gap-2">
-                <span id="sortStatus"></span>
-                <button id="clearSortBtn" class="hidden px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300">X</button>
+            <div class="p-3 rounded-xl bg-red-500/10 text-red-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
             </div>
         </div>
     </div>
 
-    <!-- Chart Section (Bottom) -->
-    <div class="glass p-6 rounded-3xl shadow-xl border border-gray-700/30">
+    <!-- Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- NOP Chart -->
+        <div class="glass p-6 rounded-3xl border border-gray-700/30">
+            <div class="mb-4">
+                <h3 class="text-lg font-bold text-white">Distribusi per NOP</h3>
+                <p class="text-xs text-gray-400">Jumlah proposal berdasarkan NOP.</p>
+            </div>
+            <div class="h-64 relative flex justify-center items-center">
+                <canvas id="nopChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Kategori Chart -->
+        <div class="glass p-6 rounded-3xl border border-gray-700/30">
+            <div class="mb-4">
+                <h3 class="text-lg font-bold text-white">Distribusi per Kategori</h3>
+                <p class="text-xs text-gray-400">Jumlah proposal berdasarkan kategori.</p>
+            </div>
+            <div class="h-64 relative flex justify-center items-center">
+                <canvas id="kategoriChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Proposals -->
+    <div class="glass p-6 rounded-3xl border border-gray-700/30">
         <div class="flex justify-between items-center mb-6">
             <div>
-                <h2 class="text-xl font-bold text-white tracking-wide">Visualisasi Grafik</h2>
-                <p class="text-xs text-gray-400">Pilih kolom dan tipe grafik untuk analisis.</p>
+                <h3 class="text-lg font-bold text-white">Proposal Terbaru</h3>
+                <p class="text-xs text-gray-400">Daftar proposal yang baru saja diajukan.</p>
             </div>
-            <div class="px-3 py-1 text-[10px] rounded-full bg-indigo-900/30 border border-indigo-500/30 text-indigo-400 font-medium">Interactive Chart</div>
+            <a href="{{ route('approvals') }}" class="text-xs font-semibold text-blue-400 hover:text-blue-300">Lihat Semua &rarr;</a>
         </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div class="space-y-1.5">
-                <label class="text-[10px] text-gray-400 ml-1">Tipe Grafik</label>
-                <select id="chartType" class="w-full px-4 py-2 rounded-xl bg-slate-900/80 border border-slate-700/50 text-gray-200 text-xs outline-none cursor-pointer">
-                    <option value="bar">Bar</option>
-                    <option value="line">Line</option>
-                    <option value="pie">Pie</option>
-                </select>
-            </div>
-            <div class="space-y-1.5">
-                <label class="text-[10px] text-gray-400 ml-1">Kategori (X)</label>
-                <select id="xColumn" class="w-full px-4 py-2 rounded-xl bg-slate-900/80 border border-slate-700/50 text-gray-200 text-xs outline-none cursor-pointer"></select>
-            </div>
-            <div class="space-y-1.5">
-                <label class="text-[10px] text-gray-400 ml-1">Nilai (Y)</label>
-                <select id="yColumn" class="w-full px-4 py-2 rounded-xl bg-slate-900/80 border border-slate-700/50 text-gray-200 text-xs outline-none cursor-pointer"></select>
-            </div>
-        </div>
-
-        <div class="h-[400px] mb-6 rounded-2xl bg-slate-900/20 p-4 border border-gray-800/30">
-            <canvas id="chartCanvas"></canvas>
-        </div>
-
-        <div class="flex gap-3 justify-end">
-            <button id="downloadPdfBtn" class="px-4 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg shadow-blue-900/20 transition-all">Unduh PDF</button>
-            <button id="resetViewBtn" class="px-4 py-2 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold transition-all">Reset View</button>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-gray-300">
+                <thead class="bg-gray-800/50 text-gray-400 text-xs">
+                    <tr>
+                        <th class="px-4 py-3 font-semibold rounded-tl-lg">NOP</th>
+                        <th class="px-4 py-3 font-semibold">Nama Program</th>
+                        <th class="px-4 py-3 font-semibold">Kategori</th>
+                        <th class="px-4 py-3 font-semibold">Status</th>
+                        <th class="px-4 py-3 font-semibold rounded-tr-lg text-right">Tanggal</th>
+                    </tr>
+                </thead>
+                <tbody id="recentProposalsTable" class="divide-y divide-gray-800/50">
+                    <tr>
+                        <td colspan="5" class="px-4 py-8 text-center text-gray-500 text-xs">Memuat data...</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<style>
-    .tab-btn { color: #94a3b8; border: 1px solid transparent; }
-    .tab-btn:hover { background: rgba(30, 41, 59, 0.5); color: #e2e8f0; }
-    .tab-btn.active { background: #1e293b; color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-</style>
 @endsection
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-    let originalData = [];
-    let filteredData = [];
-    let columns = [];
-    let currentSortColumn = null;
-    let currentSortDirection = "asc";
-    let chartInstance = null;
-    let currentTab = 'all';
+    let nopChartInstance = null;
+    let kategoriChartInstance = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        fetchData();
+    });
 
     function fetchData() {
-        const statusText = document.getElementById("statusText");
-        statusText.textContent = "Memuat data dari server...";
         fetch("/api/data")
-            .then(res => {
-                if (!res.ok) throw new Error("HTTP " + res.status);
-                return res.json();
-            })
+            .then(res => res.json())
             .then(data => {
-                columns = data.columns || [];
-                originalData = data.rows || [];
+                const rows = data.rows || [];
+                const counts = data.counts || { all: 0, submitted: 0, approved: 0, rejected: 0 };
                 
-                updateTabCounts(data.counts); // Pass server counts
-                applyFilter(); // Initial filter apply
-                
-                buildTable();
-                initControls();
-                statusText.textContent = `Berhasil memuat ${originalData.length} baris.`;
+                // Update stats
+                document.getElementById('stat-total').textContent = counts.all;
+                document.getElementById('stat-pending').textContent = counts.submitted;
+                document.getElementById('stat-approved').textContent = counts.approved;
+                document.getElementById('stat-rejected').textContent = counts.rejected;
+
+                // Prepare Chart Data
+                const nopCounts = {};
+                const kategoriCounts = {};
+
+                rows.forEach(r => {
+                    const nop = r.NOP || 'Unknown';
+                    const kat = r.KATEGORI || 'Unknown';
+                    
+                    nopCounts[nop] = (nopCounts[nop] || 0) + 1;
+                    kategoriCounts[kat] = (kategoriCounts[kat] || 0) + 1;
+                });
+
+                renderChart('nopChart', nopCounts, 'Distribusi NOP');
+                renderChart('kategoriChart', kategoriCounts, 'Distribusi Kategori');
+
+                renderRecentProposals(rows);
             })
             .catch(err => {
-                console.error(err);
-                statusText.textContent = "Gagal memuat data.";
+                console.error("Failed to load dashboard data:", err);
             });
     }
 
-    function updateTabCounts(counts) {
-        if (!counts) return;
-        
-        // Use server-provided counts directly
-        // Map UI IDs to API keys
-        const mapping = {
-            'all': 'all',
-            'submitted': 'submitted',
-            'approved': 'approved',
-            'rejected': 'rejected'
-        };
+    function renderChart(canvasId, dataObj, label) {
+        const labels = Object.keys(dataObj);
+        const data = Object.values(dataObj);
+        const bgColors = labels.map((_, i) => `hsl(${i * (360 / Math.max(labels.length, 1))}, 70%, 55%)`);
 
-        Object.keys(mapping).forEach(uiKey => {
-            const apiKey = mapping[uiKey];
-            const badge = document.querySelector(`#tab-${uiKey} .count-badge`);
-            if (badge) badge.textContent = counts[apiKey] || 0;
-        });
-    }
-
-    function switchTab(tab) {
-        if (currentTab === tab) return;
+        const ctx = document.getElementById(canvasId);
         
-        // Show loader
-        const loader = document.getElementById("tableLoader");
-        loader.classList.add('opacity-100');
-        
-        // Update UI
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById(`tab-${tab}`).classList.add('active');
-        
-        currentTab = tab;
-        
-        // Small delay to show loading state
-        setTimeout(() => {
-            applyFilter();
-            loader.classList.remove('opacity-100');
-        }, 300);
-    }
-
-    function buildTable() {
-        const thead = document.querySelector("#dataTable thead");
-        thead.innerHTML = "";
-        const headerRow = document.createElement("tr");
-
-        columns.forEach(col => {
-            const th = document.createElement("th");
-            th.className = "px-4 py-3 font-semibold text-gray-400 cursor-pointer hover:bg-gray-800/50 transition-colors whitespace-nowrap";
-            th.textContent = col;
-            th.addEventListener("click", () => onHeaderClick(col, th));
-            headerRow.appendChild(th);
-        });
-        thead.appendChild(headerRow);
-        renderRows();
-    }
-
-    function renderRows() {
-        const tbody = document.querySelector("#dataTable tbody");
-        tbody.innerHTML = "";
-        const limitValue = parseInt(document.getElementById("rowLimit").value);
-        const rows = limitValue > 0 ? filteredData.slice(0, limitValue) : filteredData;
-        
-        if (rows.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="${columns.length}" class="px-6 py-12 text-center text-gray-500 italic">Tidak ada data ditemukan untuk kategori ini.</td></tr>`;
-        } else {
-            rows.forEach(row => {
-                const tr = document.createElement("tr");
-                tr.className = "hover:bg-blue-500/5 transition-colors group";
-                columns.forEach(col => {
-                    const td = document.createElement("td");
-                    td.className = "px-4 py-2.5 border-b border-gray-800/30 group-last:border-0 whitespace-nowrap text-gray-300";
-                    let val = row[col];
-                    
-                    // Special formatting for Proposal (show filename only)
-                    if (col === 'PROPOSAL' && val && typeof val === 'string') {
-                        val = val.split(/[/\\]/).pop();
-                        // Remove timestamp prefix if present (e.g., proposal_123456_filename.pdf)
-                        if (val.startsWith('proposal_')) {
-                            const parts = val.split('_');
-                            if (parts.length >= 3) {
-                                val = parts.slice(2).join('_');
-                            }
-                        }
-                    }
-
-                    // Format ingest_timestamp (Tanggal Pengajuan)
-                    if (col === 'ingest_timestamp' && val) {
-                         const d = new Date(val);
-                         if (!isNaN(d.getTime())) {
-                             val = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
-                         }
-                    }
-                    
-                    // Status Badge
-                    if (col === 'STATUS') {
-                        const status = (val || 'SUBMITTED').toUpperCase();
-                        let statusClass = 'text-blue-400 bg-blue-400/10 border-blue-400/20'; // Default Submitted
-                        if (status === 'APPROVED') statusClass = 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
-                        if (status === 'REJECTED') statusClass = 'text-red-400 bg-red-400/10 border-red-400/20';
-                        
-                        td.innerHTML = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase border ${statusClass}">${status}</span>`;
-                    } else if (col === 'PROPOSAL') {
-                        td.textContent = val;
-                        td.title = row[col]; // Tooltip shows full path
-                    } else {
-                        td.textContent = (val === null || val === undefined) ? "" : val;
-                    }
-                    
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
-            });
-        }
-        
-        document.getElementById("rowCountBadge").textContent = `${filteredData.length} baris`;
-    }
-
-    function onHeaderClick(column, th) {
-        if (currentSortColumn === column) {
-            currentSortDirection = currentSortDirection === "asc" ? "desc" : "asc";
-        } else {
-            currentSortColumn = column;
-            currentSortDirection = "asc";
-        }
-        
-        applyFilter(); // Re-apply filter and sort together
-
-        document.querySelectorAll("#dataTable th").forEach(t => t.classList.remove("text-blue-400"));
-        th.classList.add("text-blue-400");
-        document.getElementById("sortStatus").textContent = `Sort: ${column} (${currentSortDirection})`;
-        document.getElementById("clearSortBtn").classList.remove("hidden");
-    }
-
-    function initControls() {
-        const xSelect = document.getElementById("xColumn");
-        const ySelect = document.getElementById("yColumn");
-        const primarySelect = document.getElementById("primaryColumnSelect");
-        
-        [xSelect, ySelect, primarySelect].forEach(s => s.innerHTML = "");
-        
-        columns.forEach((col, idx) => {
-            const opt = document.createElement("option");
-            opt.value = col; opt.textContent = col;
-            xSelect.appendChild(opt.cloneNode(true));
-            ySelect.appendChild(opt.cloneNode(true));
-            primarySelect.appendChild(opt.cloneNode(true));
-        });
-        
-        if (columns.length > 1) ySelect.selectedIndex = 1;
-
-        document.getElementById("globalSearch").addEventListener("input", applyFilter);
-        document.getElementById("rowLimit").addEventListener("change", renderRows);
-        document.getElementById("chartType").addEventListener("change", renderChart);
-        xSelect.addEventListener("change", renderChart);
-        ySelect.addEventListener("change", renderChart);
-        document.getElementById("resetViewBtn").addEventListener("click", () => {
-            document.getElementById("globalSearch").value = "";
-            switchTab('all');
-        });
-        document.getElementById("clearSortBtn").addEventListener("click", () => {
-            currentSortColumn = null;
-            document.getElementById("clearSortBtn").classList.add("hidden");
-            document.getElementById("sortStatus").textContent = "";
-            applyFilter();
-        });
-        
-        renderChart();
-    }
-
-    function applyFilter() {
-        const term = document.getElementById("globalSearch").value.toLowerCase();
-        
-        // 1. Filter by Tab
-        let tempFiltered = [];
-        const targetTab = currentTab.toUpperCase();
-
-        if (currentTab === 'all') {
-            tempFiltered = originalData;
-        } else if (currentTab === 'submitted') {
-            // "Submitted" tab shows everything that is NOT Approved and NOT Rejected
-            // This aligns with the server-side counting logic which groups unknown statuses as submitted
-            tempFiltered = originalData.filter(r => {
-                const s = String(r.STATUS || '').trim().toUpperCase();
-                return s !== 'APPROVED' && s !== 'REJECTED';
-            });
-        } else {
-             // Strict match for Approved and Rejected
-            tempFiltered = originalData.filter(r => String(r.STATUS || '').trim().toUpperCase() === targetTab);
-        }
-        
-        // 2. Filter by Global Search
-        if (term) {
-            filteredData = tempFiltered.filter(row => 
-                columns.some(col => String(row[col] || '').toLowerCase().includes(term))
-            );
-        } else {
-            filteredData = tempFiltered;
-        }
-
-        // 3. Re-apply Sort if active
-        if (currentSortColumn) {
-            filteredData.sort((a, b) => {
-                let va = a[currentSortColumn], vb = b[currentSortColumn];
-                if (va === vb) return 0;
-                if (va === null) return 1;
-                if (vb === null) return -1;
-                
-                if (!isNaN(parseFloat(va)) && !isNaN(parseFloat(vb))) {
-                    return currentSortDirection === "asc" ? va - vb : vb - va;
-                }
-                
-                va = String(va).toLowerCase();
-                vb = String(vb).toLowerCase();
-                return currentSortDirection === "asc" ? (va < vb ? -1 : 1) : (va < vb ? 1 : -1);
-            });
-        }
-        
-        renderRows();
-        renderChart();
-    }
-
-    function renderChart() {
-        const xCol = document.getElementById("xColumn").value;
-        const yCol = document.getElementById("yColumn").value;
-        const type = document.getElementById("chartType").value;
-        
-        if (!xCol || !yCol) return;
-        
-        const grouped = {};
-        filteredData.forEach(row => {
-            const key = row[xCol];
-            const val = parseFloat(row[yCol]) || 0;
-            grouped[key] = (grouped[key] || 0) + val;
-        });
-        
-        const labels = Object.keys(grouped);
-        const data = Object.values(grouped);
-        
-        if (chartInstance) chartInstance.destroy();
-        
-        chartInstance = new Chart(document.getElementById("chartCanvas"), {
-            type: type,
+        // Pick pie chart for circular representation
+        new Chart(ctx, {
+            type: 'doughnut',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: `${yCol} per ${xCol}`,
+                    label: label,
                     data: data,
-                    backgroundColor: type === 'pie' ? labels.map((_, i) => `hsl(${i * 360 / labels.length}, 70%, 50%)`) : '#3b82f6',
-                    borderColor: '#1e293b',
-                    borderWidth: 1
+                    backgroundColor: bgColors,
+                    borderWidth: 0,
+                    hoverOffset: 4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '70%',
                 plugins: {
-                    legend: { labels: { color: '#94a3b8', font: { size: 10 } } }
-                },
-                scales: type === 'pie' ? {} : {
-                    y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { size: 9 } } },
-                    x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 9 }, maxRotation: 45, minRotation: 45 } }
+                    legend: {
+                        position: 'right',
+                        labels: { color: '#94a3b8', font: { size: 11 }, padding: 15 }
+                    }
                 }
             }
         });
     }
 
-    function exportToExcel() {
-        if (!filteredData || filteredData.length === 0) {
-            alert("Tidak ada data untuk diexport.");
+    function renderRecentProposals(rows) {
+        const tbody = document.getElementById('recentProposalsTable');
+        
+        // Sort by ingest_timestamp desc
+        const sorted = [...rows].sort((a, b) => {
+            return new Date(b.ingest_timestamp || 0) - new Date(a.ingest_timestamp || 0);
+        });
+
+        // Take top 5
+        const recent = sorted.slice(0, 5);
+
+        if (recent.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-gray-500 text-xs">Belum ada proposal.</td></tr>`;
             return;
         }
 
-        // Prepare data for export
-        const exportData = filteredData.map(row => {
-            const newRow = {};
-            columns.forEach(col => {
-                newRow[col] = row[col];
-            });
-            return newRow;
-        });
+        tbody.innerHTML = recent.map(p => {
+            const status = (p.STATUS || 'SUBMITTED').toUpperCase();
+            let statusClass = 'text-blue-400 bg-blue-400/10 border-blue-400/20';
+            if (status === 'APPROVED') statusClass = 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
+            if (status === 'REJECTED') statusClass = 'text-red-400 bg-red-400/10 border-red-400/20';
+            
+            const dateStr = p.ingest_timestamp ? new Date(p.ingest_timestamp).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
 
-        // Create workbook and worksheet
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.json_to_sheet(exportData);
-
-        // Add worksheet to workbook
-        XLSX.utils.book_append_sheet(wb, ws, "Data Dashboard");
-
-        // Generate Excel file
-        const fileName = `dashboard_export_${new Date().toISOString().slice(0,10)}.xlsx`;
-        XLSX.writeFile(wb, fileName);
+            return `
+                <tr class="hover:bg-slate-800/30 transition-colors">
+                    <td class="px-4 py-3 border-b border-gray-800/30"><span class="font-mono text-xs text-gray-400">${p.NOP || '-'}</span></td>
+                    <td class="px-4 py-3 border-b border-gray-800/30 font-medium text-white line-clamp-1" style="max-width:200px" title="${p.PROGRAM}">${p.PROGRAM || '-'}</td>
+                    <td class="px-4 py-3 border-b border-gray-800/30 text-xs">${p.KATEGORI || '-'}</td>
+                    <td class="px-4 py-3 border-b border-gray-800/30">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border ${statusClass}">${status}</span>
+                    </td>
+                    <td class="px-4 py-3 border-b border-gray-800/30 text-right text-xs text-gray-500">${dateStr}</td>
+                </tr>
+            `;
+        }).join('');
     }
-
-    document.addEventListener("DOMContentLoaded", fetchData);
 </script>
 @endpush
-

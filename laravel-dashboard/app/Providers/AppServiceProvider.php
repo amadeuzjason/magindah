@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
+use App\Services\DataService;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -11,8 +13,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(\App\Services\SQLiteService::class, function ($app) {
-            return new \App\Services\SQLiteService();
+        $this->app->singleton(DataService::class, function ($app) {
+            return new DataService();
         });
     }
 

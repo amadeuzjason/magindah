@@ -131,7 +131,7 @@ return [
         'update_date_on_publish' => true,
     ],
 
-    'sqlite_path' => env('DB_DATABASE', base_path('../data_pipeline.sqlite')),
+    'sqlite_path' => env('SQLITE_PATH', base_path('../data_pipeline.sqlite')),
 
     /*
     |--------------------------------------------------------------------------

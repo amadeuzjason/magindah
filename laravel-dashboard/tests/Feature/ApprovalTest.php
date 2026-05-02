@@ -10,17 +10,10 @@ use Tests\TestCase;
 
 class ApprovalTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-        // Override config to use the real database file instead of :memory:
-        // This ensures the service connects to the DB where records_current table exists.
-        config(['database.sqlite_path' => 'd:/12/test-excel-py/data_pipeline.sqlite']);
-    }
-
-    // Note: We are using SQLite directly via service, not Eloquent models for records_current.
-    // So RefreshDatabase trait might not work as expected for that table if it's not in migrations.
-    // But we can check side effects.
+    // protected function setUp(): void
+    // {
+    //     parent::setUp();
+    // }
 
     public function test_new_submission_has_submitted_status_and_null_approver()
     {
@@ -47,21 +40,15 @@ class ApprovalTest extends TestCase
         $response->assertStatus(200)
                  ->assertJson(['success' => true]);
 
-        // Verify in Database directly since we don't have a Model for records_current easily accessible in tests usually
-        // But we can use DB facade if configured.
-        // Assuming the app uses the sqlite service which connects to a specific file.
-        
-        $dbPath = config('database.sqlite_path', base_path('database/database.sqlite')); 
-        // Wait, the app uses a custom path in SQLiteService: d:\12\test-excel-py\data_pipeline.sqlite
-        // We need to check that file.
-        
-        $db = new \SQLite3('d:/12/test-excel-py/data_pipeline.sqlite');
-        $result = $db->query("SELECT * FROM records_current WHERE PROGRAM = 'Test Program' ORDER BY id DESC LIMIT 1");
+        $db = new \SQLite3(config('database.sqlite_path'));
+        $stmt = $db->prepare("SELECT * FROM records_current WHERE PROGRAM = :p ORDER BY id DESC LIMIT 1");
+        $stmt->bindValue(':p', 'Test Program');
+        $result = $stmt->execute();
         $row = $result->fetchArray(SQLITE3_ASSOC);
-        
-        $this->assertNotNull($row, 'Record not found in DB');
-        $this->assertEquals('Submitted', $row['STATUS'], 'Status should be Submitted');
-        $this->assertNull($row['APPROVED BY'], 'Approved By should be null');
-        $this->assertNotEquals('Hacker', $row['APPROVED BY']);
+        $db->close();
+
+        $this->assertNotEmpty($row, 'Record not found in DB');
+        $this->assertEquals('Submitted', $row['STATUS'] ?? null, 'Status should be Submitted');
+        $this->assertTrue(!isset($row['APPROVED BY']) || $row['APPROVED BY'] === null, 'Approved By should be null');
     }
 }

@@ -4,16 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 
 class AuthController extends Controller
 {
-    private $users = [
-        'NOP-PALU' => 'palu123',
-        'NOP-MKS' => 'mks123',
-        'NOP-MANADO' => 'manado123',
-        'admin' => 'admin123'
-    ];
-
     public function showLogin()
     {
         if (Session::has('logged_in')) {
@@ -24,21 +19,43 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $username = $request->input('username');
-        $password = $request->input('password');
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
 
-        if (isset($this->users[$username]) && $this->users[$username] === $password) {
-            Session::put('logged_in', true);
-            Session::put('username', $username);
-            return redirect()->route('dashboard');
+        try {
+            $user = User::where('email', $credentials['email'])->first();
+            if ($user) {
+                $plainMatches = is_string($user->password) && hash_equals($user->password, $credentials['password']);
+                if (Hash::check($credentials['password'], $user->password) || $plainMatches) {
+                    if ($plainMatches) {
+                        $user->password = Hash::make($credentials['password']);
+                        $user->save();
+                    }
+
+                    Session::put('logged_in', true);
+                    Session::put('username', $user->username);
+                    Session::put('user_name', $user->name ?? $user->username);
+                    Session::put('user_jabatan', $user->jabatan ?? '');
+                    $request->session()->regenerate();
+                    return redirect()->route('dashboard');
+                }
+            }
+        } catch (\Throwable $e) {
+            // Keep behavior as invalid credentials
         }
 
-        return back()->with('error', 'Username atau password salah.');
+        return back()->with('error', 'Email atau password salah.');
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
-        Session::forget(['logged_in', 'username']);
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        Session::forget(['logged_in', 'username', 'user_name', 'user_jabatan']);
+
         return redirect()->route('login');
     }
 }
