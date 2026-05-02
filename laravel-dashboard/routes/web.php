@@ -28,6 +28,7 @@ Route::middleware(['custom_auth'])->group(function () {
 
     // Approval Actions
     Route::get('/approvals', [DashboardController::class, 'approvals'])->name('approvals');
+    Route::get('/approvals/{id}', [DashboardController::class, 'approvalDetail'])->name('approvals.detail');
     Route::get('/guide', [DashboardController::class, 'guide'])->name('guide');
     Route::post('/api/approve', [DashboardController::class, 'approve']);
     Route::post('/api/reject', [DashboardController::class, 'reject']);
@@ -50,4 +51,6 @@ Route::middleware(['custom_auth'])->group(function () {
     // Admin Proposal Edit Routes
     Route::get('/admin/proposal/{id}/edit', [\App\Http\Controllers\Admin\ProposalController::class, 'edit'])->name('admin.proposal.edit');
     Route::put('/admin/proposal/{id}', [\App\Http\Controllers\Admin\ProposalController::class, 'update'])->name('admin.proposal.update');
+    Route::delete('/admin/proposal/delete-all', [DashboardController::class, 'destroyAll'])->name('admin.proposal.destroyAll');
+    Route::delete('/admin/proposal/{id}', [DashboardController::class, 'destroy'])->name('admin.proposal.destroy');
 });

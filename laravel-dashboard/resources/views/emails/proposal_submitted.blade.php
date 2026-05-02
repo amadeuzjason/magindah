@@ -1,18 +1,27 @@
 <x-mail::message>
+<div style="text-align: center; margin-bottom: 20px;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/b/bc/Telkomsel_2021_icon.svg" alt="Telkomsel Logo" style="height: 50px;">
+</div>
+
 # Pengajuan Proposal Baru
 
-Proposal baru telah diajukan dan memerlukan persetujuan Anda.
+Sebuah proposal baru telah diajukan dan saat ini menunggu persetujuan Anda.
 
 **Detail Proposal:**
+
 - **NOP:** {{ $proposal['nop'] }}
 - **Program:** {{ $proposal['program'] }}
 - **Kategori:** {{ $proposal['kategori'] }}
-- **Diajukan Oleh:** {{ $proposal['assign_by'] }}
+- **Diajukan oleh:** {{ $proposal['proposer_name'] ?? $proposal['assign_by'] }}
 
-<x-mail::button :url="config('app.url') . '/approvals'">
+Silakan tinjau dan lakukan persetujuan melalui halaman berikut:
+
+<x-mail::button :url="config('app.url') . '/approvals/' . ($proposal['id'] ?? '')">
 Lihat Halaman Approval
 </x-mail::button>
 
-Terima kasih,<br>
-{{ config('app.name') }}
+Terima kasih atas perhatian Anda.
+
+Hormat kami,<br>
+Magindah
 </x-mail::message>

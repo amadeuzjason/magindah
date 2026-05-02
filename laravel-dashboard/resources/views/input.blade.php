@@ -33,7 +33,7 @@
             <!-- Toast Notification Container (Fixed) -->
             <div id="toastContainer" class="fixed top-20 right-5 z-[70] flex flex-col gap-3 pointer-events-none">
                 <!-- Success Toast -->
-                <div id="toastSuccess" class="transform translate-x-full transition-all duration-300 ease-in-out bg-gray-800 border border-emerald-500/30 shadow-lg shadow-emerald-900/20 rounded-xl p-4 flex items-center gap-3 w-80 pointer-events-auto">
+                <div id="toastSuccess" style="display: none;" class="fixed top-20 right-5 z-[70] transform transition-all duration-300 ease-in-out bg-gray-800 border border-emerald-500/30 shadow-lg shadow-emerald-900/20 rounded-xl p-4 flex items-center gap-3 w-80 pointer-events-auto">
                     <div class="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -46,7 +46,7 @@
                 </div>
 
                 <!-- Error Toast -->
-                <div id="toastError" class="transform translate-x-full transition-all duration-300 ease-in-out bg-gray-800 border border-red-500/30 shadow-lg shadow-red-900/20 rounded-xl p-4 flex items-center gap-3 w-80 pointer-events-auto">
+                <div id="toastError" style="display: none;" class="fixed top-20 right-5 z-[70] transform transition-all duration-300 ease-in-out bg-gray-800 border border-red-500/30 shadow-lg shadow-red-900/20 rounded-xl p-4 flex items-center gap-3 w-80 pointer-events-auto">
                     <div class="flex-shrink-0 w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-400">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -64,7 +64,7 @@
                 <div class="space-y-4">
                     <div>
                         <label for="nop" class="block text-sm font-medium text-gray-300 mb-1">NOP <span class="text-red-400">*</span></label>
-                        <input type="text" id="nop" name="nop" required class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="Nomor Program">
+                        <input type="text" id="nop" name="nop" required class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all cursor-not-allowed opacity-80" placeholder="Nomor Program" value="{{ $userBranch ?? '' }}" readonly>
                         <p class="text-xs text-red-400 mt-1 hidden" id="error-nop"></p>
                     </div>
 
@@ -184,37 +184,33 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-4">
-                        <div>
-                            <label for="revenue" class="block text-sm font-medium text-gray-300 mb-1">Revenue</label>
-                            <input type="number" id="revenue" name="revenue" class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="0">
-                        </div>
-                        <div>
-                            <label for="cost" class="block text-sm font-medium text-gray-300 mb-1">Cost</label>
-                            <input type="number" id="cost" name="cost" class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="0">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-1">Profit</label>
-                            <div class="w-full bg-gray-900/50 border border-gray-700/50 rounded-lg px-4 py-2 text-white flex items-center justify-between">
-                                <span id="profitDisplay" class="font-mono text-emerald-400">0.00%</span>
-                                <input type="hidden" id="profit" name="profit" value="0">
-                            </div>
+                    <div>
+                        <label for="revenue" class="block text-sm font-medium text-gray-300 mb-1">Revenue</label>
+                        <input type="number" id="revenue" name="revenue" class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="0">
+                    </div>
+                    <div>
+                        <label for="cost" class="block text-sm font-medium text-gray-300 mb-1">Cost</label>
+                        <input type="number" id="cost" name="cost" class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Profit</label>
+                        <div class="w-full bg-gray-900/50 border border-gray-700/50 rounded-lg px-4 py-2 text-white flex items-center justify-between">
+                            <span id="profitDisplay" class="font-mono text-emerald-400">0.00%</span>
+                            <input type="hidden" id="profit" name="profit" value="0">
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-4">
-                        <div>
-                            <label for="incremental_1" class="block text-xs font-medium text-gray-400 mb-1">Incremental 1</label>
-                            <input type="number" id="incremental_1" name="incremental_1" class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="0">
-                        </div>
-                        <div>
-                            <label for="incremental_2" class="block text-xs font-medium text-gray-400 mb-1">Incremental 2</label>
-                            <input type="number" id="incremental_2" name="incremental_2" class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="0">
-                        </div>
-                        <div>
-                            <label for="incremental_3" class="block text-xs font-medium text-gray-400 mb-1">Incremental 3</label>
-                            <input type="number" id="incremental_3" name="incremental_3" class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="0">
-                        </div>
+                    <div>
+                        <label for="incremental_1" class="block text-sm font-medium text-gray-300 mb-1">Incremental 1</label>
+                        <input type="number" id="incremental_1" name="incremental_1" class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="0">
+                    </div>
+                    <div>
+                        <label for="incremental_2" class="block text-sm font-medium text-gray-300 mb-1">Incremental 2</label>
+                        <input type="number" id="incremental_2" name="incremental_2" class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="0">
+                    </div>
+                    <div>
+                        <label for="incremental_3" class="block text-sm font-medium text-gray-300 mb-1">Incremental 3</label>
+                        <input type="number" id="incremental_3" name="incremental_3" class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="0">
                     </div>
 
                     <!-- Pilot removed as requested -->
@@ -506,15 +502,13 @@
             });
             
             quill.on('text-change', function() {
-                if (activeJustifikasiField !== 'justifikasi_teknis') {
-                    setJustifikasiValue(activeJustifikasiField, quill.root.innerHTML);
-                    if (justifikasiEditorCounter) {
-                        justifikasiEditorCounter.textContent = `${quill.getText().trim().length} karakter`;
-                    }
-                    validateJustifikasiField(activeJustifikasiField, { showEditorError: true });
-                    updateJustifikasiSummaries();
-                    scheduleDraftSave();
+                setJustifikasiValue(activeJustifikasiField, quill.root.innerHTML);
+                if (justifikasiEditorCounter) {
+                    justifikasiEditorCounter.textContent = `${quill.getText().trim().length} karakter`;
                 }
+                validateJustifikasiField(activeJustifikasiField, { showEditorError: true });
+                updateJustifikasiSummaries();
+                scheduleDraftSave();
             });
         }
 
@@ -552,32 +546,57 @@
             if (el) el.value = value;
         }
 
-        function setSummaryState(summaryEl, isFilled) {
+        function setSummaryState(summaryEl, isFilled, isValid = true) {
             if (!summaryEl) return;
-            summaryEl.textContent = isFilled ? 'Terisi' : 'Belum diisi';
-            summaryEl.classList.remove('text-gray-400', 'text-emerald-400');
-            summaryEl.classList.add(isFilled ? 'text-emerald-400' : 'text-gray-400');
+            if (!isFilled) {
+                summaryEl.textContent = 'Belum diisi';
+                summaryEl.className = 'text-xs text-gray-400';
+            } else if (!isValid) {
+                summaryEl.textContent = 'Tidak Memenuhi Kriteria';
+                summaryEl.className = 'text-xs text-red-400 font-semibold';
+            } else {
+                summaryEl.textContent = 'Memenuhi Kriteria';
+                summaryEl.className = 'text-xs text-emerald-400 font-semibold';
+            }
         }
 
-        function setIndicatorState(fieldId, isFilled) {
+        function setIndicatorState(fieldId, isFilled, isValid = true) {
             const indicator = document.getElementById(`indicator-${fieldId}`);
             if (!indicator) return;
-            indicator.textContent = isFilled ? 'Terisi' : 'Kosong';
-            indicator.classList.remove('text-slate-500', 'text-emerald-400');
-            indicator.classList.add(isFilled ? 'text-emerald-400' : 'text-slate-500');
+            if (!isFilled) {
+                indicator.textContent = 'Kosong';
+                indicator.className = 'text-xs text-slate-500';
+            } else if (!isValid) {
+                indicator.textContent = 'Tidak Memenuhi';
+                indicator.className = 'text-xs text-red-400 font-semibold';
+            } else {
+                indicator.textContent = 'Memenuhi';
+                indicator.className = 'text-xs text-emerald-400 font-semibold';
+            }
+        }
+
+        function checkFieldValidity(fieldId) {
+            const raw = getJustifikasiValue(fieldId);
+            const plainText = raw.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').trim();
+            if (plainText.length === 0) return { isFilled: false, isValid: false };
+            return { isFilled: true, isValid: plainText.length >= 100 };
         }
 
         function updateJustifikasiSummaries() {
-            setSummaryState(document.getElementById('justifikasiSummaryObjective'), getJustifikasiValue('justifikasi_objective').trim().length > 0);
-            setSummaryState(document.getElementById('justifikasiSummaryAlasan'), getJustifikasiValue('justifikasi_alasan').trim().length > 0);
-            setSummaryState(document.getElementById('justifikasiSummaryDistribusi'), getJustifikasiValue('justifikasi_distribusi').trim().length > 0);
-            setSummaryState(document.getElementById('justifikasiSummaryLingkup'), getJustifikasiValue('justifikasi_lingkup').trim().length > 0);
-            setSummaryState(document.getElementById('justifikasiSummaryTeknis'), getJustifikasiValue('justifikasi_teknis').trim().length > 0);
-            setSummaryState(document.getElementById('justifikasiSummaryRab'), getJustifikasiValue('justifikasi_rab').trim().length > 0);
-            setSummaryState(document.getElementById('justifikasiSummarySummary'), getJustifikasiValue('justifikasi_summary').trim().length > 0);
+            const summaries = {
+                'justifikasi_objective': document.getElementById('justifikasiSummaryObjective'),
+                'justifikasi_alasan': document.getElementById('justifikasiSummaryAlasan'),
+                'justifikasi_distribusi': document.getElementById('justifikasiSummaryDistribusi'),
+                'justifikasi_lingkup': document.getElementById('justifikasiSummaryLingkup'),
+                'justifikasi_teknis': document.getElementById('justifikasiSummaryTeknis'),
+                'justifikasi_rab': document.getElementById('justifikasiSummaryRab'),
+                'justifikasi_summary': document.getElementById('justifikasiSummarySummary')
+            };
 
             justifikasiFields.forEach(fieldId => {
-                setIndicatorState(fieldId, getJustifikasiValue(fieldId).trim().length > 0);
+                const { isFilled, isValid } = checkFieldValidity(fieldId);
+                setSummaryState(summaries[fieldId], isFilled, isValid);
+                setIndicatorState(fieldId, isFilled, isValid);
             });
         }
 
@@ -677,23 +696,13 @@
             
             const rawVal = getJustifikasiValue(fieldId);
             
-            if (fieldId === 'justifikasi_teknis') {
-                 if (justifikasiQuillWrapper) justifikasiQuillWrapper.classList.add('hidden');
-                 if (justifikasiEditorTextarea) {
-                     justifikasiEditorTextarea.classList.remove('hidden');
-                     justifikasiEditorTextarea.placeholder = meta.placeholder;
-                     justifikasiEditorTextarea.value = rawVal;
-                     if (justifikasiEditorCounter) justifikasiEditorCounter.textContent = `${rawVal.length} karakter`;
-                 }
-            } else {
-                 if (justifikasiEditorTextarea) justifikasiEditorTextarea.classList.add('hidden');
-                 if (justifikasiQuillWrapper) {
-                     justifikasiQuillWrapper.classList.remove('hidden');
-                     if (quill) {
-                          quill.root.innerHTML = rawVal; // Load HTML safely
-                          if (justifikasiEditorCounter) justifikasiEditorCounter.textContent = `${quill.getText().trim().length} karakter`;
-                     }
-                 }
+            if (justifikasiEditorTextarea) justifikasiEditorTextarea.classList.add('hidden');
+            if (justifikasiQuillWrapper) {
+                justifikasiQuillWrapper.classList.remove('hidden');
+                if (quill) {
+                    quill.root.innerHTML = rawVal; // Load HTML safely
+                    if (justifikasiEditorCounter) justifikasiEditorCounter.textContent = `${quill.getText().trim().length} karakter`;
+                }
             }
 
             setActiveSubbabButton(fieldId);
@@ -919,32 +928,21 @@
         }
 
         function showToast(type, message) {
-            if (type === 'success') {
-                if (message && toastSuccessText) toastSuccessText.textContent = message;
-                toastSuccess.classList.remove('translate-x-full');
-                toastSuccess.classList.add('translate-x-0');
-                // Auto hide after 3 seconds
-                setTimeout(() => {
-                    toastSuccess.classList.add('translate-x-full');
-                    toastSuccess.classList.remove('translate-x-0');
-                }, 3000);
-            } else {
-                if (message) toastErrorText.textContent = message;
-                toastError.classList.remove('translate-x-full');
-                toastError.classList.add('translate-x-0');
-                // Auto hide after 5 seconds
-                setTimeout(() => {
-                    toastError.classList.add('translate-x-full');
-                    toastError.classList.remove('translate-x-0');
-                }, 5000);
-            }
+            const toast = type === 'success' ? toastSuccess : toastError;
+            const textEl = type === 'success' ? toastSuccessText : toastErrorText;
+            
+            if (message && textEl) textEl.textContent = message;
+            
+            toast.style.display = 'flex';
+            
+            window.setTimeout(() => {
+                toast.style.display = 'none';
+            }, type === 'success' ? 3000 : 5000);
         }
 
         function hideToasts() {
-            toastSuccess.classList.add('translate-x-full');
-            toastSuccess.classList.remove('translate-x-0');
-            toastError.classList.add('translate-x-full');
-            toastError.classList.remove('translate-x-0');
+            toastSuccess.style.display = 'none';
+            toastError.style.display = 'none';
         }
 
         function showValidationErrors(errors) {
@@ -1096,31 +1094,74 @@ document.addEventListener('DOMContentLoaded', function () {
                     justifikasiRabHidden.dispatchEvent(ev);
                 }
 
-                // Update indicator in sidebar
-                const indicator = document.getElementById('indicator-justifikasi_rab');
-                const summaryEl = document.getElementById('justifikasiSummaryRab');
-                if (indicator) { indicator.textContent = 'Terisi'; indicator.className = 'text-xs text-emerald-400'; }
-                if (summaryEl) { summaryEl.textContent = 'Terisi'; summaryEl.className = 'text-xs text-emerald-400'; }
-
                 // Show preview
                 rabModalFileName.textContent = file.name;
                 rabModalRowCount.textContent = `${bodyRows.length} baris`;
                 rabModalFileIndicator.classList.remove('hidden');
 
-                // Render preview table
+                // Render preview table with contenteditable
                 rabModalThead.innerHTML = '<tr>' + headers.map(h =>
                     `<th style="padding:7px 10px;color:#94a3b8;font-size:0.7rem;text-transform:uppercase;border-bottom:1px solid rgba(100,116,139,0.3);">${String(h).trim()}</th>`
                 ).join('') + '</tr>';
+                
                 rabModalTbody.innerHTML = bodyRows.map(row =>
                     '<tr>' + headers.map((_, i) =>
-                        `<td style="padding:6px 10px;border-bottom:1px solid rgba(100,116,139,0.1);color:#e2e8f0;">${String(row[i] !== undefined ? row[i] : '').trim()}</td>`
+                        `<td contenteditable="true" style="padding:6px 10px;border-bottom:1px solid rgba(100,116,139,0.1);color:#e2e8f0;outline:none;transition:background 0.2s;" class="hover:bg-slate-800/50 focus:bg-slate-800/80">${String(row[i] !== undefined ? row[i] : '').trim()}</td>`
                     ).join('') + '</tr>'
                 ).join('');
+                
                 rabModalTfoot.innerHTML = grandTotalRow
                     ? '<tr>' + grandTotalRow.map(c =>
-                        `<td style="padding:6px 10px;font-weight:700;color:#f59e0b;border-top:1px solid rgba(245,158,11,0.3);">${String(c).trim()}</td>`
+                        `<td contenteditable="true" style="padding:6px 10px;font-weight:700;color:#f59e0b;border-top:1px solid rgba(245,158,11,0.3);outline:none;">${String(c).trim()}</td>`
                     ).join('') + '</tr>'
                     : '';
+
+                // Sync editable table to hidden HTML field
+                function syncRabTableToHidden() {
+                    let syncHtml = '<table class="rab-table" style="width:100%;border-collapse:collapse;font-size:9.5pt;">';
+                    syncHtml += '<thead><tr>';
+                    const ths = rabModalThead.querySelectorAll('th');
+                    ths.forEach(th => {
+                        syncHtml += `<th style="background:#2c3e50;color:#fff;padding:6px 8px;border:1px solid #ccc;font-weight:bold;">${th.innerText.trim()}</th>`;
+                    });
+                    syncHtml += '</tr></thead><tbody>';
+                    
+                    const rows = rabModalTbody.querySelectorAll('tr');
+                    rows.forEach(tr => {
+                        syncHtml += '<tr>';
+                        const tds = tr.querySelectorAll('td');
+                        tds.forEach(td => {
+                            syncHtml += `<td style="padding:5px 8px;border:1px solid #ddd;vertical-align:top;">${td.innerText.trim()}</td>`;
+                        });
+                        syncHtml += '</tr>';
+                    });
+                    syncHtml += '</tbody>';
+                    
+                    const footRows = rabModalTfoot.querySelectorAll('tr');
+                    if (footRows.length) {
+                        syncHtml += '<tfoot>';
+                        footRows.forEach(tr => {
+                            syncHtml += '<tr>';
+                            const tds = tr.querySelectorAll('td');
+                            tds.forEach(td => {
+                                syncHtml += `<td style="padding:6px 8px;border:1px solid #ddd;font-weight:bold;background:#eef8ff;">${td.innerText.trim()}</td>`;
+                            });
+                            syncHtml += '</tr>';
+                        });
+                        syncHtml += '</tfoot>';
+                    }
+                    syncHtml += '</table>';
+                    
+                    if (justifikasiRabHidden) {
+                        justifikasiRabHidden.value = syncHtml;
+                        updateJustifikasiSummaries();
+                        scheduleDraftSave();
+                    }
+                }
+
+                // Add listeners to table for syncing
+                rabModalTbody.addEventListener('input', syncRabTableToHidden);
+                rabModalTfoot.addEventListener('input', syncRabTableToHidden);
 
                 rabModalPreview.classList.remove('hidden');
 

@@ -18,7 +18,16 @@ class InputController extends Controller
 
     public function show()
     {
-        return view('input');
+        $username = session('username', '');
+        $userBranch = '';
+        try {
+            $userModel = \App\Models\User::where('username', $username)->first();
+            if ($userModel) {
+                $userBranch = $userModel->lokasi_branch;
+            }
+        } catch (\Throwable $e) {}
+
+        return view('input', compact('userBranch'));
     }
 
     public function store(Request $request)
@@ -105,9 +114,9 @@ class InputController extends Controller
                 // Convert to base64 to prevent DomPDF artisan serve deadlock
                 $localPath = str_replace(asset('storage/'), storage_path('app/public/'), $sigUrl);
                 if (file_exists($localPath)) {
-                    $type = pathinfo($localPath, PATHINFO_EXTENSION);
-                    $data = file_get_contents($localPath);
-                    $sigUrl = 'data:image/' . $type . ';base64,' . base64_encode($data);
+                    $fileType = pathinfo($localPath, PATHINFO_EXTENSION);
+                    $fileContent = file_get_contents($localPath);
+                    $sigUrl = 'data:image/' . $fileType . ';base64,' . base64_encode($fileContent);
                 }
                 $userSig = '<img src="' . $sigUrl . '" width="100" style="margin-bottom: 5px;"><br><span style="font-size: 8pt; color: #555;">Signed on ' . date('d M Y') . '</span><div style="border-bottom: 1px solid #333; margin: 5px auto; padding-bottom: 5px; width: 80%;"><b>' . $userFullName . '</b></div><span style="font-size: 10pt; font-weight: bold; color: black;">' . $userTitle . '</span>';
             } else {
@@ -192,8 +201,16 @@ class InputController extends Controller
             $sql = 'INSERT INTO records_current (' . implode(', ', $insertCols) . ') VALUES (' . implode(', ', $placeholders) . ')';
             $this->db->execute($sql, $params);
 
+            // Fetch the ID of the inserted record
+            $insertedRecord = $this->db->query('SELECT id FROM records_current WHERE row_hash = :hash ORDER BY id DESC LIMIT 1', [':hash' => $rowHash]);
+            $insertedId = $insertedRecord[0]['id'] ?? null;
+            $data['id'] = $insertedId;
+
             // Send notification to Managers
             try {
+                $proposer = \App\Models\User::where('username', $data['assign_by'])->first();
+                $data['proposer_name'] = $proposer ? $proposer->name : $data['assign_by'];
+
                 $kat = $data['kategori'] ?? '';
                 $recipients = [];
                 if (in_array($kat, ['Productivity', 'Civil', 'CME', 'Optime'], true)) {

@@ -205,7 +205,7 @@
     <div class="section-title">5. Spesifikasi Teknis</div>
     <div class="content">
         @if(!empty($proposal['justifikasi_teknis']))
-            <p>{!! nl2br(e($proposal['justifikasi_teknis'])) !!}</p>
+            {!! nl2br(e($proposal['justifikasi_teknis'])) !!}
         @else
             <p class="empty-field">Belum diisi.</p>
         @endif

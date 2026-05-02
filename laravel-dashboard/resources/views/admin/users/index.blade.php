@@ -200,9 +200,9 @@
                 <tr>
                     <th class="text-left">#</th>
                     <th class="text-left">Pengguna</th>
-                    <th class="text-left">Username</th>
                     <th class="text-left">Email</th>
                     <th class="text-left">Jabatan</th>
+                    <th class="text-left">Lokasi / Branch</th>
                     <th class="text-left">No. Telepon</th>
                     <th class="text-center">Aksi</th>
                 </tr>
@@ -210,7 +210,7 @@
             <tbody id="userTableBody">
                 @forelse($users as $index => $user)
                 <tr class="user-row" data-name="{{ strtolower($user->name) }}" data-username="{{ strtolower($user->username) }}" data-email="{{ strtolower($user->email) }}">
-                    <td class="text-slate-500 font-mono text-xs">{{ $index + 1 }}</td>
+                    <td class="text-slate-500 font-mono text-xs">{{ $users->firstItem() + $index }}</td>
                     <td>
                         <div class="flex items-center gap-3">
                             @php
@@ -228,9 +228,6 @@
                             <span class="font-medium text-white">{{ $user->name }}</span>
                         </div>
                     </td>
-                    <td>
-                        <span class="font-mono text-xs bg-slate-800/60 px-2 py-1 rounded-lg text-slate-300">{{ $user->username }}</span>
-                    </td>
                     <td class="text-slate-300">{{ $user->email }}</td>
                     <td>
                         @if($user->jabatan)
@@ -238,6 +235,9 @@
                         @else
                             <span class="text-slate-600 text-xs italic">—</span>
                         @endif
+                    </td>
+                    <td class="text-slate-300 text-xs">
+                        {{ $user->lokasi_branch ?: '—' }}
                     </td>
                     <td class="text-slate-300 font-mono text-xs">{{ $user->phone_number ?: '—' }}</td>
                     <td>
@@ -275,6 +275,11 @@
                 @endforelse
             </tbody>
         </table>
+        @if($users->hasPages())
+        <div class="px-6 py-4 border-t border-slate-800/60 bg-slate-900/20">
+            {{ $users->links() }}
+        </div>
+        @endif
     </div>
 </div>
 

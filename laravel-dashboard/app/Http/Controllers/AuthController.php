@@ -38,6 +38,7 @@ class AuthController extends Controller
                     Session::put('username', $user->username);
                     Session::put('user_name', $user->name ?? $user->username);
                     Session::put('user_jabatan', $user->jabatan ?? '');
+                    Session::put('user_branch', $user->lokasi_branch ?? '');
                     $request->session()->regenerate();
                     return redirect()->route('dashboard');
                 }

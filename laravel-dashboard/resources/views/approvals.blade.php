@@ -47,13 +47,22 @@
             <button onclick="setTab('rejected')" id="tab-rejected" class="px-4 py-2 rounded-lg bg-slate-800 text-gray-400 hover:text-gray-200 hover:bg-slate-700 font-semibold text-sm transition-all focus:outline-none whitespace-nowrap">Reject</button>
             <button onclick="setTab('all')" id="tab-all" class="px-4 py-2 rounded-lg bg-slate-800 text-gray-400 hover:text-gray-200 hover:bg-slate-700 font-semibold text-sm transition-all focus:outline-none whitespace-nowrap">All</button>
             
+            @if(Session::get('username') === 'admin')
+            <button onclick="deleteAllData()" class="px-4 py-2 rounded-lg bg-red-900/30 text-red-400 hover:bg-red-800/40 border border-red-800/30 font-semibold text-sm transition-all focus:outline-none whitespace-nowrap flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Hapus Semua Data
+            </button>
+            @endif
+            
             <span class="px-2 py-0.5 rounded-full bg-slate-700 text-gray-300 text-xs font-bold" id="pendingCountBadge">0</span>
         </div>
 
         <!-- Toast Notification Container (Fixed) -->
         <div id="toastContainer" class="fixed top-20 right-5 z-50 flex flex-col gap-3 pointer-events-none">
             <!-- Success Toast -->
-            <div id="toastSuccess" class="transform translate-x-full transition-all duration-300 ease-in-out bg-gray-800 border border-emerald-500/30 shadow-lg shadow-emerald-900/20 rounded-xl p-4 flex items-center gap-3 w-80 pointer-events-auto">
+            <div id="toastSuccess" style="display: none;" class="fixed top-20 right-5 z-50 transform transition-all duration-300 ease-in-out bg-gray-800 border border-emerald-500/30 shadow-lg shadow-emerald-900/20 rounded-xl p-4 flex items-center gap-3 w-80 pointer-events-auto">
                 <div class="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -66,7 +75,7 @@
             </div>
 
             <!-- Error Toast -->
-            <div id="toastError" class="transform translate-x-full transition-all duration-300 ease-in-out bg-gray-800 border border-red-500/30 shadow-lg shadow-red-900/20 rounded-xl p-4 flex items-center gap-3 w-80 pointer-events-auto">
+            <div id="toastError" style="display: none;" class="fixed top-20 right-5 z-50 transform transition-all duration-300 ease-in-out bg-gray-800 border border-red-500/30 shadow-lg shadow-red-900/20 rounded-xl p-4 flex items-center gap-3 w-80 pointer-events-auto">
                 <div class="flex-shrink-0 w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-400">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -150,7 +159,9 @@
     let currentPage = 1;
     const itemsPerPage = 10;
     let currentTab = 'submitted';
-    const currentUser = '{{ session('username') }}';
+    const currentUser = '{{ $username }}';
+    const userJabatan = '{{ $jabatan }}';
+    const userBranch = '{{ $branch }}';
 
     function setTab(tab) {
         currentTab = tab;
@@ -291,18 +302,26 @@
                  statusBadge = `<span class="px-2 py-1 rounded-md bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold uppercase tracking-wider">REJECTED</span>`;
             }
 
-            // Approval Logic - Admin CANNOT approve, only non-admin managers can
-            const isMBA = ['power', 'cme electrical', 'psb', 'transmisi'].includes((p.KATEGORI || '').toLowerCase());
+            // Approval Logic
             let canApprove = false;
 
             if (currentUser !== 'admin') {
                 if (p.approval_stage === 'Manager_NOP') {
-                    const nopManagers = ['NOP-MKS', 'NOP-PALU', 'NOP-MANADO'];
-                    canApprove = nopManagers.includes(currentUser);
+                    canApprove = (userJabatan === 'Manager NOP' && ['Makassar', 'Kendari', 'Palu'].includes(userBranch));
+                    // Fallback for hardcoded usernames if needed
+                    if (!canApprove) canApprove = ['NOP-MKS', 'NOP-PALU', 'NOP-MANADO'].includes(currentUser);
                 } else if (p.approval_stage === 'Manager_SQA_MBA') {
-                    canApprove = ['manager_sqa', 'manager_mba'].includes(currentUser);
+                    const isMBA = ['power', 'cme electrical', 'psb', 'transmisi'].includes((p.KATEGORI || '').toLowerCase());
+                    if (userJabatan === 'Manager SQA' && !isMBA) canApprove = true;
+                    if (userJabatan === 'Manager MBA' && isMBA) canApprove = true;
+                    // Fallback
+                    if (!canApprove) canApprove = ['manager_sqa', 'manager_mba'].includes(currentUser);
                 } else if (p.approval_stage === 'Manager_NOS') {
-                    canApprove = ['manager_nos'].includes(currentUser);
+                    canApprove = (userJabatan === 'Manager NOS');
+                    if (!canApprove) canApprove = (currentUser === 'manager_nos');
+                } else if (p.approval_stage === 'GM_RNOP') {
+                    canApprove = (userJabatan === 'General Manager' && userBranch === 'RNOP Sulawesi');
+                    if (!canApprove) canApprove = (currentUser === 'manager_gm');
                 }
             }
 
@@ -319,19 +338,25 @@
                 `;
             }
 
-            // Admin always gets Edit button on ALL proposals
+            // Admin always gets Edit and Delete buttons on ALL proposals
             if (currentUser === 'admin') {
                 actionButtons = `
-                    <div class="mt-4 pt-4 border-t border-gray-700/30">
+                    <div class="mt-4 pt-4 border-t border-gray-700/30 grid grid-cols-2 gap-2">
                         <a href="/admin/proposal/${p.id}/edit" class="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-indigo-600/80 hover:bg-indigo-500 text-white text-xs font-semibold transition-all border border-indigo-500/30">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            Edit Proposal
+                            Edit
                         </a>
+                        <button onclick="deleteProposal('${p.id}')" class="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-red-600/80 hover:bg-red-500 text-white text-xs font-semibold transition-all border border-red-500/30">
+                            Hapus
+                        </button>
                     </div>
                 `;
             }
+
+            const detailButton = `
+                <a href="/approvals/${p.id}" class="flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white text-[11px] font-bold transition-all border border-blue-500/30">
+                    Lihat Detail
+                </a>
+            `;
 
             // Parse filename
             let filename = 'Document';
@@ -356,11 +381,14 @@
                 </div>
                 
                 <div class="flex justify-between items-start mb-3 relative z-10">
-                    <div class="flex flex-col">
+                    <div class="flex flex-col max-w-[60%]">
                         <span class="text-[10px] text-gray-500 font-mono mb-1">${p.NOP}</span>
                         <h4 class="text-sm font-bold text-white line-clamp-1" title="${p.PROGRAM}">${p.PROGRAM}</h4>
                     </div>
-                    ${statusBadge}
+                    <div class="flex flex-col items-end gap-2">
+                        ${statusBadge}
+                        ${detailButton}
+                    </div>
                 </div>
                 
                 <div class="space-y-2 mb-4 relative z-10">
@@ -462,8 +490,8 @@
                 // Show success toast
                 const toast = document.getElementById('toastSuccess');
                 document.getElementById('toastSuccessText').textContent = data.message || `Proposal berhasil di-${status.toLowerCase()}.`;
-                toast.classList.remove('translate-x-full');
-                setTimeout(() => toast.classList.add('translate-x-full'), 3000);
+                toast.style.display = 'flex';
+                setTimeout(() => toast.style.display = 'none', 3000);
 
                 // Reload data to reflect changes
                 loadProposals();
@@ -471,16 +499,74 @@
                 // Show error toast
                 const toast = document.getElementById('toastError');
                 document.getElementById('toastErrorText').textContent = data.message;
-                toast.classList.remove('translate-x-full');
-                setTimeout(() => toast.classList.add('translate-x-full'), 5000);
+                toast.style.display = 'flex';
+                setTimeout(() => toast.style.display = 'none', 5000);
             }
         })
         .catch(err => {
             console.error(err);
             const toast = document.getElementById('toastError');
             document.getElementById('toastErrorText').textContent = 'Terjadi kesalahan koneksi.';
-            toast.classList.remove('translate-x-full');
-            setTimeout(() => toast.classList.add('translate-x-full'), 5000);
+            toast.style.display = 'flex';
+            setTimeout(() => toast.style.display = 'none', 5000);
+        });
+    }
+
+    function deleteProposal(id) {
+        if (!confirm('Anda yakin ingin menghapus data proposal ini? Tindakan ini tidak dapat dibatalkan.')) return;
+        
+        fetch(`/admin/proposal/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                'Accept': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const toast = document.getElementById('toastSuccess');
+                document.getElementById('toastSuccessText').textContent = data.message || 'Proposal berhasil dihapus.';
+                toast.style.display = 'flex';
+                setTimeout(() => toast.style.display = 'none', 3000);
+                loadProposals();
+            } else {
+                alert(data.message || 'Gagal menghapus proposal.');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Terjadi kesalahan koneksi.');
+        });
+    }
+
+    function deleteAllData() {
+        if (!confirm('PERINGATAN: Anda yakin ingin menghapus SEMUA data proposal? Tindakan ini tidak dapat dibatalkan.')) return;
+        
+        const password = prompt('Masukkan password konfirmasi untuk menghapus semua data:');
+        if (!password) return;
+
+        fetch(`/admin/proposal/delete-all`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ confirmation_password: password })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message || 'Semua data berhasil dihapus.');
+                loadProposals();
+            } else {
+                alert(data.message || 'Gagal menghapus data. Periksa password Anda.');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Terjadi kesalahan koneksi.');
         });
     }
 

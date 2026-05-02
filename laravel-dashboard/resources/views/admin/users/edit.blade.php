@@ -38,10 +38,9 @@
                             placeholder="Nama Lengkap">
                     </div>
                     <div>
-                        <label class="block text-xs text-gray-400 mb-1.5 ml-1">Username <span class="text-red-400">*</span></label>
-                        <input type="text" name="username" value="{{ old('username', $user->username) }}" required
-                            class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700/50 text-gray-200 text-sm focus:border-blue-500/50 outline-none transition-all"
-                            placeholder="username_login">
+                        <div class="hidden">
+                            <input type="hidden" name="username" value="auto">
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs text-gray-400 mb-1.5 ml-1">Email <span class="text-red-400">*</span></label>
@@ -49,26 +48,42 @@
                             class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700/50 text-gray-200 text-sm focus:border-blue-500/50 outline-none transition-all"
                             placeholder="email@example.com">
                     </div>
-                </div>
-
-                <div class="space-y-4">
                     <div>
                         <label class="block text-xs text-gray-400 mb-1.5 ml-1">No. Telepon</label>
                         <input type="text" name="phone_number" value="{{ old('phone_number', $user->phone_number) }}"
                             class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700/50 text-gray-200 text-sm focus:border-blue-500/50 outline-none transition-all"
                             placeholder="08xxxxxxxxxx">
                     </div>
+                </div>
+
+                <div class="space-y-4">
                     <div>
-                        <label class="block text-xs text-gray-400 mb-1.5 ml-1">Jabatan</label>
-                        <input type="text" name="jabatan" value="{{ old('jabatan', $user->jabatan) }}"
-                            class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700/50 text-gray-200 text-sm focus:border-blue-500/50 outline-none transition-all"
-                            placeholder="Contoh: Staff Admin">
+                        <label class="block text-xs text-gray-400 mb-1.5 ml-1">Jabatan <span class="text-red-400">*</span></label>
+                        <input type="text" name="jabatan" value="{{ old('jabatan', $user->jabatan) }}" required list="jabatanOptions"
+                            class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700/50 text-gray-200 text-sm focus:border-blue-500/50 outline-none transition-all" placeholder="Pilih atau ketik jabatan">
+                        <datalist id="jabatanOptions">
+                            <option value="Engineer">
+                            <option value="Staff">
+                            <option value="Supervisor">
+                            <option value="Manager">
+                            <option value="General Manager">
+                            <option value="Vice President">
+                        </datalist>
                     </div>
                     <div>
-                        <label class="block text-xs text-gray-400 mb-1.5 ml-1">Lokasi Branch</label>
-                        <input type="text" name="lokasi_branch" value="{{ old('lokasi_branch', $user->lokasi_branch) }}"
-                            class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700/50 text-gray-200 text-sm focus:border-blue-500/50 outline-none transition-all"
-                            placeholder="Contoh: NOP Makassar">
+                        <label class="block text-xs text-gray-400 mb-1.5 ml-1">Lokasi Branch <span class="text-red-400">*</span></label>
+                        <input type="text" name="lokasi_branch" value="{{ old('lokasi_branch', $user->lokasi_branch) }}" required list="branchOptions"
+                            class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700/50 text-gray-200 text-sm focus:border-blue-500/50 outline-none transition-all" placeholder="Pilih atau ketik lokasi">
+                        <datalist id="branchOptions">
+                            <option value="NOP Makassar">
+                            <option value="NOP Manado">
+                            <option value="NOP Kendari">
+                            <option value="NOP Palu">
+                            <option value="SQA Sulawesi">
+                            <option value="MBA Sulawesi">
+                            <option value="NOS Sulawesi">
+                            <option value="RNOP Sulawesi">
+                        </datalist>
                     </div>
                     <div>
                         <label class="block text-xs text-gray-400 mb-1.5 ml-1">Password Baru

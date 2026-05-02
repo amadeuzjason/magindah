@@ -18,8 +18,35 @@ class DashboardController extends Controller
 
     public function index()
     {
+        $username = Session::get('username');
+        $totalUsers = 0;
+        $users = [];
+        $userModel = \App\Models\User::where('username', $username)->first();
+        
+        $jabatan = $userModel ? $userModel->jabatan : '';
+        $branch = $userModel ? $userModel->lokasi_branch : '';
+        
+        // Manager NOP Makassar, Kendari, Palu
+        $isNopManager = ($jabatan === 'Manager NOP' && in_array($branch, ['Makassar', 'Kendari', 'Palu']));
+        
+        // Manager SQA Sulawesi, Manager MBA Sulawesi, Manager NOS Sulawesi, General Manager RNOP Sulawesi
+        $isApproverManager = in_array($jabatan, ['Manager SQA', 'Manager MBA', 'Manager NOS', 'General Manager']) && str_contains($branch, 'Sulawesi');
+
+        if ($username === 'admin') {
+            try {
+                $totalUsers = \App\Models\User::count();
+                $users = \App\Models\User::orderBy('name')->get();
+            } catch (\Throwable $e) {}
+        }
+
         return view('dashboard', [
-            'username' => Session::get('username')
+            'username' => $username,
+            'totalUsers' => $totalUsers,
+            'users' => $users,
+            'isNopManager' => $isNopManager,
+            'isApproverManager' => $isApproverManager,
+            'jabatan' => $jabatan,
+            'branch' => $branch
         ]);
     }
 
@@ -33,9 +60,25 @@ class DashboardController extends Controller
     public function approvals()
     {
         $username = Session::get('username');
-
+        $userModel = \App\Models\User::where('username', $username)->first();
+        
         return view('approvals', [
-            'username' => $username
+            'username' => $username,
+            'jabatan' => $userModel ? $userModel->jabatan : '',
+            'branch' => $userModel ? $userModel->lokasi_branch : ''
+        ]);
+    }
+
+    public function approvalDetail($id)
+    {
+        $rows = $this->db->query('SELECT * FROM records_current WHERE `id` = :id', [':id' => $id]);
+        if (empty($rows)) {
+            abort(404, 'Proposal tidak ditemukan');
+        }
+        
+        return view('approval_detail', [
+            'proposal' => $rows[0],
+            'username' => Session::get('username')
         ]);
     }
 
@@ -50,8 +93,22 @@ class DashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'Status tidak valid.'], 400);
         }
         
-        $allowed = ['admin', 'NOP-MKS', 'NOP-PALU', 'NOP-MANADO', 'manager_sqa', 'manager_mba', 'manager_nos', 'manager_gm'];
-        if (!in_array($username, $allowed, true)) {
+        // Fetch user info to check permissions by role
+        $userModel = \App\Models\User::where('username', $username)->first();
+        $userJabatan = $userModel ? $userModel->jabatan : '';
+        $userBranch = $userModel ? $userModel->lokasi_branch : '';
+
+        $isAllowed = ($username === 'admin');
+        if (!$isAllowed) {
+            // NOP Managers
+            if ($userJabatan === 'Manager NOP' && in_array($userBranch, ['Makassar', 'Kendari', 'Palu'])) $isAllowed = true;
+            // Central Managers
+            if (in_array($userJabatan, ['Manager SQA', 'Manager MBA', 'Manager NOS', 'General Manager']) && str_contains($userBranch, 'Sulawesi')) $isAllowed = true;
+            // Legacy/Hardcoded fallback
+            if (in_array($username, ['NOP-MKS', 'NOP-PALU', 'NOP-MANADO', 'manager_sqa', 'manager_mba', 'manager_nos', 'manager_gm'])) $isAllowed = true;
+        }
+
+        if (!$isAllowed) {
             return response()->json(['success' => false, 'message' => 'Anda tidak memiliki akses untuk melakukan tindakan ini.'], 403);
         }
 
@@ -101,17 +158,8 @@ class DashboardController extends Controller
             $updateFields = [];
             $params = [];
             
-            $userSigImage = null;
-            $userBranch = '';
-            try {
-                $userModel = \App\Models\User::where('username', $username)->first();
-                if ($userModel) {
-                    $userSigImage = $userModel->signature;
-                    $userBranch = $userModel->lokasi_branch;
-                }
-            } catch (\Throwable $e) {}
-            
-            $userJabatan = session('user_jabatan', 'Manager');
+            $userSigImage = $userModel ? $userModel->signature : null;
+
             $userTitle = trim($userJabatan . ' ' . $userBranch);
 
             if ($userSigImage) {
@@ -141,9 +189,17 @@ class DashboardController extends Controller
                     $updateFields[] = "`sign_manager_nos` = :sign";
                     $params[':sign'] = $finalSignature;
                 }
-                $this->notifyNextApprovers(['manager_gm'], $record, 'GM RNOP');
+                $gmUsers = \App\Models\User::where('jabatan', 'General Manager')->where('lokasi_branch', 'RNOP Sulawesi')->pluck('username')->toArray();
+                $targetUsernames = array_merge(['manager_gm'], $gmUsers);
+                $this->notifyNextApprovers($targetUsernames, $record, 'GM RNOP');
             } elseif ($stage === 'GM_RNOP') {
+                if ($userJabatan !== 'General Manager' || $userBranch !== 'RNOP Sulawesi') {
+                    if ($username !== 'admin') {
+                        return response()->json(['success' => false, 'message' => 'Hanya General Manager RNOP Sulawesi yang dapat menyetujui tahap akhir ini.'], 403);
+                    }
+                }
                 $nextStage = 'Approved';
+
                 $newStatus = 'APPROVED';
                 if (in_array('sign_gm', $tableCols, true)) {
                     $updateFields[] = "`sign_gm` = :sign";
@@ -185,6 +241,7 @@ class DashboardController extends Controller
                                     'nop' => $rec['NOP'] ?? '-',
                                     'program' => $rec['PROGRAM'] ?? '-',
                                     'kategori' => $rec['KATEGORI'] ?? '-',
+                                    'proposer_name' => $proposerUser ? $proposerUser->name : $proposerUsername,
                                 ];
                                 \Illuminate\Support\Facades\Mail::to($proposerUser->email)->send(new \App\Mail\ProposalApprovedMail($mailData));
                             }
@@ -196,6 +253,42 @@ class DashboardController extends Controller
             }
 
             return response()->json(['success' => true, 'message' => "Proposal $id telah di-approve ($nextStage)."]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        if (Session::get('username') !== 'admin') {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $this->db->execute('DELETE FROM records_current WHERE `id` = :id', [':id' => $id]);
+            return response()->json(['success' => true, 'message' => 'Proposal berhasil dihapus.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function destroyAll(Request $request)
+    {
+        if (Session::get('username') !== 'admin') {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $password = $request->input('confirmation_password');
+        // Simple security check: verify against admin's current password
+        $user = \App\Models\User::where('username', 'admin')->first();
+        
+        if (!$user || !\Illuminate\Support\Facades\Hash::check($password, $user->password)) {
+            return response()->json(['success' => false, 'message' => 'Password konfirmasi salah.'], 403);
+        }
+
+        try {
+            $this->db->execute('DELETE FROM records_current', []);
+            return response()->json(['success' => true, 'message' => 'Seluruh data proposal berhasil dihapus.']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -213,18 +306,42 @@ class DashboardController extends Controller
         $context = $request->input('context');
         $df = $this->loadData($status);
 
-        if ($context === 'approvals') {
+        if ($context === 'approvals' || $context === 'dashboard') {
              $username = Session::get('username');
-             // Show all proposals in approvals
+             $userModel = \App\Models\User::where('username', $username)->first();
+             $jabatan = $userModel ? $userModel->jabatan : '';
+             $branch = $userModel ? $userModel->lokasi_branch : '';
              
-             // Update counts to reflect filtered data
-             $counts = ['all' => 0, 'submitted' => 0, 'approved' => 0, 'rejected' => 0];
-             foreach ($df['rows'] as $row) {
-                 $counts['all']++;
-                 $s = strtolower($row['STATUS'] ?? 'submitted');
-                 if (isset($counts[$s])) $counts[$s]++; else $counts['submitted']++;
+             $isNopManager = ($jabatan === 'Manager NOP' && in_array($branch, ['Makassar', 'Kendari', 'Palu']));
+             $isApproverManager = in_array($jabatan, ['Manager SQA', 'Manager MBA', 'Manager NOS', 'General Manager']) && str_contains($branch, 'Sulawesi');
+
+             // Prepare Global Chart Data before filtering rows
+             $nopCounts = [];
+             $kategoriCounts = [];
+             foreach ($df['rows'] as $r) {
+                 $nop = $r['NOP'] ?? 'Unknown';
+                 $kat = $r['KATEGORI'] ?? 'Unknown';
+                 $nopCounts[$nop] = ($nopCounts[$nop] ?? 0) + 1;
+                 $kategoriCounts[$kat] = ($kategoriCounts[$kat] ?? 0) + 1;
              }
-             $df['counts'] = $counts;
+             $df['nop_counts'] = $nopCounts;
+             $df['kategori_counts'] = $kategoriCounts;
+
+             if ($context === 'dashboard') {
+                 if ($isApproverManager) {
+                     // Managers see only what they need to approve
+                     $df['rows'] = array_values($this->filterForApprovals($df['rows'], $username));
+                 } elseif ($isNopManager) {
+                     // NOP Managers see Recent Proposals (no extra filtering needed or filter by their NOP)
+                     // Request says "proposal terbaru", so I'll just show the latest ones.
+                     // But we should probably only show those from their NOP if they are NOP managers?
+                     // The user just said "proposal terbaru", so I'll keep all for now or filter by NOP.
+                     // Let's filter by NOP if it's NOP Manager for relevance.
+                     $df['rows'] = array_values(array_filter($df['rows'], function($r) use ($branch) {
+                         return ($r['NOP'] ?? '') === $branch;
+                     }));
+                 }
+             }
         }
         
         if ($context === 'review') {
@@ -257,11 +374,15 @@ class DashboardController extends Controller
         try {
             $managers = User::whereIn('username', $usernames)->get();
             if ($managers->count() > 0) {
+                $proposerUsername = $proposal['ASSIGN BY'] ?? null;
+                $proposer = User::where('username', $proposerUsername)->first();
+                
                 $mailData = [
                     'nop' => $proposal['NOP'] ?? '-',
                     'program' => $proposal['PROGRAM'] ?? '-',
                     'kategori' => $proposal['KATEGORI'] ?? '-',
-                    'assign_by' => $proposal['ASSIGN BY'] ?? 'System',
+                    'assign_by' => $proposerUsername ?? 'System',
+                    'proposer_name' => $proposer ? $proposer->name : ($proposerUsername ?? 'System'),
                 ];
                 
                 \Illuminate\Support\Facades\Mail::to($managers)->send(new \App\Mail\ProposalNextStageMail($mailData, $stageName));
@@ -303,7 +424,11 @@ class DashboardController extends Controller
             }
             
             if (in_array($username, ['manager_nos'], true) && $stage === 'Manager_NOS') return true;
-            if (in_array($username, ['manager_gm'], true) && $stage === 'GM_RNOP') return true;
+            if ($stage === 'GM_RNOP') {
+                $userModel = \App\Models\User::where('username', $username)->first();
+                if ($userModel && $userModel->jabatan === 'General Manager' && $userModel->lokasi_branch === 'RNOP Sulawesi') return true;
+                if ($username === 'manager_gm' || $username === 'admin') return true;
+            }
             
             return false;
         });

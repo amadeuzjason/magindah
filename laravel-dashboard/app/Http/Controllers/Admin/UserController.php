@@ -20,7 +20,7 @@ class UserController extends Controller
     public function index()
     {
         $this->adminCheck();
-        $users = User::orderBy('name')->get();
+        $users = User::orderBy('name')->paginate(10);
         return view('admin.users.index', compact('users'));
     }
 
@@ -34,13 +34,26 @@ class UserController extends Controller
     {
         $this->adminCheck();
 
+        $input = $request->all();
+        if ($input['username'] === 'auto' || empty($input['username'])) {
+            $input['username'] = explode('@', $input['email'])[0];
+            // Ensure uniqueness
+            $base = $input['username'];
+            $counter = 1;
+            while (User::where('username', $input['username'])->exists()) {
+                $input['username'] = $base . $counter;
+                $counter++;
+            }
+            $request->merge(['username' => $input['username']]);
+        }
+
         $request->validate([
             'name'         => 'required|string|max:255',
             'username'     => 'required|string|max:255|unique:users,username',
             'email'        => 'required|string|email|max:255|unique:users,email',
             'phone_number' => 'nullable|string|max:20',
-            'jabatan'      => 'nullable|string|max:255',
-            'lokasi_branch'=> 'nullable|string|max:255',
+            'jabatan'      => 'required|string|max:255',
+            'lokasi_branch'=> 'required|string|max:255',
             'password'     => 'required|string|min:8',
         ]);
 
@@ -69,14 +82,26 @@ class UserController extends Controller
         $this->adminCheck();
 
         $user = User::findOrFail($id);
+        $input = $request->all();
+        
+        if (isset($input['username']) && $input['username'] === 'auto') {
+            $input['username'] = explode('@', $input['email'])[0];
+            $base = $input['username'];
+            $counter = 1;
+            while (User::where('username', $input['username'])->where('id', '!=', $id)->exists()) {
+                $input['username'] = $base . $counter;
+                $counter++;
+            }
+            $request->merge(['username' => $input['username']]);
+        }
 
         $request->validate([
             'name'         => 'required|string|max:255',
             'username'     => 'required|string|max:255|unique:users,username,' . $id,
             'email'        => 'required|string|email|max:255|unique:users,email,' . $id,
             'phone_number' => 'nullable|string|max:20',
-            'jabatan'      => 'nullable|string|max:255',
-            'lokasi_branch'=> 'nullable|string|max:255',
+            'jabatan'      => 'required|string|max:255',
+            'lokasi_branch'=> 'required|string|max:255',
             'password'     => 'nullable|string|min:8',
         ]);
 

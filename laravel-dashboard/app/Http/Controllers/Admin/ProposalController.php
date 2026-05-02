@@ -106,4 +106,19 @@ class ProposalController extends Controller
 
         return redirect()->route('approvals')->with('success', 'Data proposal berhasil diperbarui oleh admin.');
     }
+
+    public function destroy($id)
+    {
+        if (session('username') !== 'admin') {
+            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+        }
+
+        try {
+            $sql = "DELETE FROM records_current WHERE id = :id";
+            $this->db->execute($sql, [':id' => $id]);
+            return response()->json(['success' => true, 'message' => 'Proposal berhasil dihapus.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Gagal menghapus: ' . $e->getMessage()], 500);
+        }
+    }
 }

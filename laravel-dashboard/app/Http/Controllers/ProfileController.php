@@ -32,16 +32,13 @@ class ProfileController extends Controller
             'name' => 'required|string|max:255',
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'phone_number' => 'nullable|string|max:20',
-            'jabatan' => 'nullable|string|max:255',
-            'lokasi_branch' => 'nullable|string|max:255',
             'signature' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $user->name = $request->name;
         $user->email = $request->email;
         $user->phone_number = $request->phone_number;
-        $user->jabatan = $request->jabatan;
-        $user->lokasi_branch = $request->lokasi_branch;
+        // jabatan and lokasi_branch are only managed by admin
 
         if ($request->hasFile('signature')) {
             $jabatanLower = strtolower($user->jabatan ?? '');

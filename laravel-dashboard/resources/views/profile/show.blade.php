@@ -76,14 +76,14 @@
                                 class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700/50 text-gray-200 text-sm focus:border-blue-500/50 outline-none transition-all" placeholder="08xxxxxxxxxx">
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-400 mb-1.5 ml-1">Jabatan</label>
-                            <input type="text" name="jabatan" value="{{ old('jabatan', $user->jabatan) }}" 
-                                class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700/50 text-gray-200 text-sm focus:border-blue-500/50 outline-none transition-all" placeholder="Contoh: Manager Operasional">
+                            <label class="block text-xs text-gray-400 mb-1.5 ml-1">Jabatan (Diatur oleh Admin)</label>
+                            <input type="text" name="jabatan" value="{{ old('jabatan', $user->jabatan) }}" readonly
+                                class="w-full px-4 py-2.5 rounded-xl bg-slate-900/50 border border-slate-700/50 text-gray-400 text-sm focus:outline-none cursor-not-allowed" placeholder="Belum diatur">
                         </div>
                         <div class="md:col-span-2">
-                            <label class="block text-xs text-gray-400 mb-1.5 ml-1">Lokasi / Branch</label>
-                            <input type="text" name="lokasi_branch" value="{{ old('lokasi_branch', $user->lokasi_branch ?? '') }}" 
-                                class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700/50 text-gray-200 text-sm focus:border-blue-500/50 outline-none transition-all" placeholder="Contoh: NOP Makassar">
+                            <label class="block text-xs text-gray-400 mb-1.5 ml-1">Lokasi / Branch (Diatur oleh Admin)</label>
+                            <input type="text" name="lokasi_branch" value="{{ old('lokasi_branch', $user->lokasi_branch ?? '') }}" readonly
+                                class="w-full px-4 py-2.5 rounded-xl bg-slate-900/50 border border-slate-700/50 text-gray-400 text-sm focus:outline-none cursor-not-allowed" placeholder="Belum diatur">
                         </div>
                     </div>
                 </div>

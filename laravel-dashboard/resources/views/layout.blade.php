@@ -33,7 +33,7 @@
                     <div class="hidden md:flex items-center gap-3">
                         @if(Session::has('logged_in'))
                             <a href="{{ route('profile.show') }}" class="text-xs text-gray-400 hover:text-white transition-colors flex items-center gap-2">
-                                {{ Session::get('username') }}
+                                {{ Session::get('user_name') }} - {{ Session::get('user_branch') }}
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                                 </svg>
@@ -92,6 +92,12 @@
                             <div class="text-[10px] font-semibold tracking-wider uppercase text-slate-500 sidebar-label">Data Master</div>
                         </div>
 
+                        @php
+                            $excludedBranches = ['SQA Sulawesi', 'MBA Sulawesi', 'NOS Sulawesi', 'RNOP Sulawesi'];
+                            $userBranch = Session::get('user_branch');
+                        @endphp
+
+                        @if(Session::get('username') !== 'admin' && !in_array($userBranch, $excludedBranches))
                         <a href="{{ route('magindah.show') }}" class="mt-2 group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors {{ Request::is('magindah') ? 'bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/30' : 'text-slate-300 hover:bg-slate-800/50 hover:text-white' }}">
                             <span class="h-10 w-10 rounded-xl bg-slate-900/50 border border-slate-800/60 flex items-center justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 {{ Request::is('magindah') ? 'text-blue-300' : 'text-slate-300 group-hover:text-white' }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -101,6 +107,7 @@
                             </span>
                             <span class="sidebar-label">Magindah</span>
                         </a>
+                        @endif
 
                         <a href="{{ route('approvals') }}" class="mt-2 group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors {{ Request::is('approvals') ? 'bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/30' : 'text-slate-300 hover:bg-slate-800/50 hover:text-white' }}">
                             <span class="h-10 w-10 rounded-xl bg-slate-900/50 border border-slate-800/60 flex items-center justify-center">
@@ -122,6 +129,14 @@
                         </a>
 
                         @if(Session::get('username') === 'admin')
+                            <a href="{{ route('admin.users.index') }}" class="mt-2 group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors {{ Request::is('admin/users') ? 'bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/30' : 'text-slate-300 hover:bg-slate-800/50 hover:text-white' }}">
+                                <span class="h-10 w-10 rounded-xl bg-slate-900/50 border border-slate-800/60 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 {{ Request::is('admin/users') ? 'text-blue-300' : 'text-slate-300 group-hover:text-white' }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                </span>
+                                <span class="sidebar-label">Manajemen User</span>
+                            </a>
                             <a href="{{ route('admin.users.create') }}" class="mt-2 group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors {{ Request::is('admin/users/create') ? 'bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/30' : 'text-slate-300 hover:bg-slate-800/50 hover:text-white' }}">
                                 <span class="h-10 w-10 rounded-xl bg-slate-900/50 border border-slate-800/60 flex items-center justify-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 {{ Request::is('admin/users/create') ? 'text-blue-300' : 'text-slate-300 group-hover:text-white' }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
